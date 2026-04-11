@@ -1,0 +1,4 @@
+.idea
+.env
+cpq_hvac.egg-info/
+__pycache__/
