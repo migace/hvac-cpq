@@ -25,6 +25,10 @@ from app.services.configuration_validator import ConfigurationValidator
 from app.services.rule_engine import RuleEngine
 from app.services.pricing_engine import PricingEngine, PricingResult
 
+from app.core.db_utils import commit_and_refresh
+from app.repositories.product_configuration_repository import ProductConfigurationRepository
+from app.repositories.product_family_repository import ProductFamilyRepository
+
 
 class ProductConfigurationService:
     def __init__(self, session: Session) -> None:
@@ -32,19 +36,11 @@ class ProductConfigurationService:
         self.validator = ConfigurationValidator()
         self.rule_engine = RuleEngine()
         self.pricing_engine = PricingEngine()
+        self.family_repository = ProductFamilyRepository(session)
+        self.configuration_repository = ProductConfigurationRepository(session)
 
     def create_configuration(self, payload: ProductConfigurationCreate) -> ProductConfigurationModel:
-        family = self.session.scalar(
-            select(ProductFamilyModel)
-            .options(
-                selectinload(ProductFamilyModel.attributes).selectinload(
-                    AttributeDefinitionModel.enum_options
-                ),
-                selectinload(ProductFamilyModel.rules),
-                selectinload(ProductFamilyModel.pricing_rules),
-            )
-            .where(ProductFamilyModel.id == payload.product_family_id)
-        )
+        family = self.family_repository.get_by_id(payload.product_family_id)
         if not family:
             raise ProductFamilyNotFoundError(
                 f"Product family with id '{payload.product_family_id}' not found."
@@ -89,22 +85,13 @@ class ProductConfigurationService:
         )
         configuration.values.extend(value_models)
 
-        self.session.add(configuration)
-        self.session.commit()
-        self.session.refresh(configuration)
+        self.configuration_repository.add(configuration)
+        commit_and_refresh(self.session, configuration)
 
         return self.get_configuration(configuration.id)
 
     def get_configuration(self, configuration_id: int) -> ProductConfigurationModel:
-        configuration = self.session.scalar(
-            select(ProductConfigurationModel)
-            .options(
-                selectinload(ProductConfigurationModel.values).selectinload(
-                    AttributeValueModel.attribute_definition
-                )
-            )
-            .where(ProductConfigurationModel.id == configuration_id)
-        )
+        configuration = self.configuration_repository.get_by_id(configuration_id)
         if not configuration:
             raise ProductConfigurationNotFoundError(
                 f"Product configuration with id '{configuration_id}' not found."
@@ -219,17 +206,15 @@ class ProductConfigurationService:
         )
 
     def calculate_configuration_price(self, payload: ProductConfigurationCreate) -> PricingResult:
-        family = self.session.scalar(
-            select(ProductFamilyModel)
-            .options(
-                selectinload(ProductFamilyModel.attributes).selectinload(
-                    AttributeDefinitionModel.enum_options
-                ),
-                selectinload(ProductFamilyModel.rules),
-                selectinload(ProductFamilyModel.pricing_rules),
-            )
-            .where(ProductFamilyModel.id == payload.product_family_id)
+        family, configuration_values = self.build_configuration_values_map(payload)
+
+        return self.pricing_engine.calculate(
+            pricing_rules=list(family.pricing_rules),
+            configuration_values=configuration_values,
         )
+
+    def build_configuration_values_map(self, payload: ProductConfigurationCreate) -> tuple[object, dict[str, Any]]:
+        family = self.family_repository.get_by_id(payload.product_family_id)
         if not family:
             raise ProductFamilyNotFoundError(
                 f"Product family with id '{payload.product_family_id}' not found."
@@ -265,7 +250,4 @@ class ProductConfigurationService:
             configuration_values=configuration_values,
         )
 
-        return self.pricing_engine.calculate(
-            pricing_rules=list(family.pricing_rules),
-            configuration_values=configuration_values,
-        )
+        return family, configuration_values

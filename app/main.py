@@ -14,6 +14,9 @@ from app.core.exceptions import register_exception_handlers
 from app.core.logging import get_logger, configure_logging
 from app.observability.tracing import configure_tracing
 
+from app.core.http_logging import HttpLoggingMiddleware
+from app.core.request_context import RequestContextMiddleware
+
 configure_logging()
 logger = get_logger()
 settings = get_settings()
@@ -33,6 +36,9 @@ def create_app() -> FastAPI:
         debug=settings.app_debug,
         lifespan=lifespan,
     )
+
+    app.add_middleware(RequestContextMiddleware)
+    app.add_middleware(HttpLoggingMiddleware)
 
     register_exception_handlers(app)
     app.include_router(health_router)

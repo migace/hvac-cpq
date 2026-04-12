@@ -1,6 +1,4 @@
-from sqlalchemy import select
-from sqlalchemy.orm import Session, selectinload
-
+from app.core.db_utils import commit_and_refresh
 from app.db.models import (
     AttributeDefinitionModel,
     AttributeOptionModel,
@@ -8,17 +6,17 @@ from app.db.models import (
     ProductFamilyModel,
 )
 from app.domain.exceptions import ProductFamilyAlreadyExistsError, ProductFamilyNotFoundError
+from app.repositories.product_family_repository import ProductFamilyRepository
 from app.schemas.product_family import ProductFamilyCreate
 
 
 class ProductFamilyService:
-    def __init__(self, session: Session) -> None:
+    def __init__(self, session) -> None:
         self.session = session
+        self.repository = ProductFamilyRepository(session)
 
     def create_product_family(self, payload: ProductFamilyCreate) -> ProductFamilyModel:
-        existing = self.session.scalar(
-            select(ProductFamilyModel).where(ProductFamilyModel.code == payload.code)
-        )
+        existing = self.repository.get_by_code(payload.code)
         if existing:
             raise ProductFamilyAlreadyExistsError(
                 f"Product family with code '{payload.code}' already exists."
@@ -56,33 +54,16 @@ class ProductFamilyService:
 
             family.attributes.append(attribute_model)
 
-        self.session.add(family)
-        self.session.commit()
-        self.session.refresh(family)
+        self.repository.add(family)
+        commit_and_refresh(self.session, family)
 
         return self.get_product_family(family.id)
 
     def get_product_family(self, family_id: int) -> ProductFamilyModel:
-        family = self.session.scalar(
-            select(ProductFamilyModel)
-            .options(
-                selectinload(ProductFamilyModel.attributes).selectinload(
-                    AttributeDefinitionModel.enum_options
-                )
-            )
-            .where(ProductFamilyModel.id == family_id)
-        )
+        family = self.repository.get_by_id(family_id)
         if not family:
             raise ProductFamilyNotFoundError(f"Product family with id '{family_id}' not found.")
-
         return family
 
     def list_product_families(self) -> list[ProductFamilyModel]:
-        result = self.session.scalars(
-            select(ProductFamilyModel).options(
-                selectinload(ProductFamilyModel.attributes).selectinload(
-                    AttributeDefinitionModel.enum_options
-                )
-            )
-        )
-        return list(result.all())
+        return self.repository.list_all()

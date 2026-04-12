@@ -19,26 +19,21 @@ from app.schemas.product_configuration import ProductConfigurationCreate
 from app.services.product_configuration_service import ProductConfigurationService
 from app.services.quote_number_service import QuoteNumberService
 
+from app.core.db_utils import commit_and_refresh
+from app.repositories.product_configuration_repository import ProductConfigurationRepository
+from app.repositories.product_quote_repository import ProductQuoteRepository
+
 
 class ProductQuoteService:
     def __init__(self, session: Session) -> None:
         self.session = session
         self.configuration_service = ProductConfigurationService(session)
         self.quote_number_service = QuoteNumberService()
+        self.configuration_repository = ProductConfigurationRepository(session)
+        self.quote_repository = ProductQuoteRepository(session)
 
     def create_quote(self, configuration_id: int) -> ProductQuoteModel:
-        configuration = self.session.scalar(
-            select(ProductConfigurationModel)
-            .options(
-                selectinload(ProductConfigurationModel.product_family).selectinload(
-                    ProductFamilyModel.attributes
-                ),
-                selectinload(ProductConfigurationModel.values).selectinload(
-                    AttributeValueModel.attribute_definition
-                ),
-            )
-            .where(ProductConfigurationModel.id == configuration_id)
-        )
+        configuration = self.configuration_repository.get_by_id(configuration_id)
         if not configuration:
             raise ProductConfigurationNotFoundError(
                 f"Product configuration with id '{configuration_id}' not found."
@@ -71,24 +66,18 @@ class ProductQuoteService:
             pricing_snapshot=self._build_pricing_snapshot(pricing_result),
         )
 
-        self.session.add(quote)
-        self.session.commit()
-        self.session.refresh(quote)
+        self.quote_repository.add(quote)
+        commit_and_refresh(self.session, quote)
         return quote
 
     def get_quote(self, quote_id: int) -> ProductQuoteModel:
-        quote = self.session.scalar(
-            select(ProductQuoteModel).where(ProductQuoteModel.id == quote_id)
-        )
+        quote = self.quote_repository.get_by_id(quote_id)
         if not quote:
             raise ProductQuoteNotFoundError(f"Quote with id '{quote_id}' not found.")
         return quote
 
     def list_quotes(self) -> list[ProductQuoteModel]:
-        result = self.session.scalars(
-            select(ProductQuoteModel).order_by(ProductQuoteModel.id.desc())
-        )
-        return list(result.all())
+        return self.quote_repository.list_all()
 
     def _extract_value(self, value_obj: AttributeValueModel) -> Any:
         if value_obj.value_integer is not None:

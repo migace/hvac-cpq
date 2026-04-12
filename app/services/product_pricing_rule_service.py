@@ -1,26 +1,19 @@
-from sqlalchemy import select
-from sqlalchemy.orm import Session, selectinload
-
-from app.db.models import (
-    ProductFamilyModel,
-    ProductPricingRuleModel,
-    PricingRuleType,
-    RuleOperator,
-)
+from app.core.db_utils import commit_and_refresh
+from app.db.models import ProductPricingRuleModel, PricingRuleType, RuleOperator
 from app.domain.exceptions import ProductFamilyNotFoundError, ProductRuleDefinitionError
+from app.repositories.product_family_repository import ProductFamilyRepository
+from app.repositories.product_pricing_rule_repository import ProductPricingRuleRepository
 from app.schemas.product_pricing_rule import ProductPricingRuleCreate
 
 
 class ProductPricingRuleService:
-    def __init__(self, session: Session) -> None:
+    def __init__(self, session) -> None:
         self.session = session
+        self.family_repository = ProductFamilyRepository(session)
+        self.pricing_rule_repository = ProductPricingRuleRepository(session)
 
     def create_pricing_rule(self, payload: ProductPricingRuleCreate) -> ProductPricingRuleModel:
-        family = self.session.scalar(
-            select(ProductFamilyModel)
-            .options(selectinload(ProductFamilyModel.attributes))
-            .where(ProductFamilyModel.id == payload.product_family_id)
-        )
+        family = self.family_repository.get_by_id(payload.product_family_id)
         if not family:
             raise ProductFamilyNotFoundError(
                 f"Product family with id '{payload.product_family_id}' not found."
@@ -46,15 +39,9 @@ class ProductPricingRuleService:
             is_active=payload.is_active,
         )
 
-        self.session.add(rule)
-        self.session.commit()
-        self.session.refresh(rule)
+        self.pricing_rule_repository.add(rule)
+        commit_and_refresh(self.session, rule)
         return rule
 
     def list_pricing_rules_for_family(self, family_id: int) -> list[ProductPricingRuleModel]:
-        result = self.session.scalars(
-            select(ProductPricingRuleModel)
-            .where(ProductPricingRuleModel.product_family_id == family_id)
-            .order_by(ProductPricingRuleModel.id.asc())
-        )
-        return list(result.all())
+        return self.pricing_rule_repository.list_for_family(family_id)
