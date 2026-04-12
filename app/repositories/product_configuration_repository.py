@@ -31,5 +31,16 @@ class ProductConfigurationRepository:
             .where(ProductConfigurationModel.id == configuration_id)
         )
 
+    def list_all(self) -> list[ProductConfigurationModel]:
+        result = self.session.scalars(
+            select(ProductConfigurationModel)
+            .options(
+                selectinload(ProductConfigurationModel.product_family),
+                selectinload(ProductConfigurationModel.values),
+            )
+            .order_by(ProductConfigurationModel.id.desc())
+        )
+        return list(result.all())
+
     def add(self, configuration: ProductConfigurationModel) -> None:
         self.session.add(configuration)

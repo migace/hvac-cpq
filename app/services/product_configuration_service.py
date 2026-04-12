@@ -87,6 +87,9 @@ class ProductConfigurationService:
 
         return self.configuration_repository.get_by_id(configuration.id)
 
+    def list_configurations(self) -> list[ProductConfigurationModel]:
+        return self.configuration_repository.list_all()
+
     def get_configuration(self, configuration_id: int) -> ProductConfigurationModel:
         configuration = self.configuration_repository.get_by_id(configuration_id)
         if not configuration:

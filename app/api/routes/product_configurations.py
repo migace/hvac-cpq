@@ -5,6 +5,7 @@ from app.api.dependencies import get_db_session
 from app.schemas.product_configuration import (
     AttributeValueRead,
     ProductConfigurationCreate,
+    ProductConfigurationListItem,
     ProductConfigurationRead,
 )
 from app.services.product_configuration_service import ProductConfigurationService
@@ -63,6 +64,25 @@ def create_product_configuration(
     service = ProductConfigurationService(session)
     configuration = service.create_configuration(payload)
     return _to_read_model(configuration)
+
+
+@router.get("", response_model=list[ProductConfigurationListItem])
+def list_product_configurations(
+        session: Session = Depends(get_db_session),
+) -> list[ProductConfigurationListItem]:
+    service = ProductConfigurationService(session)
+    configurations = service.list_configurations()
+    return [
+        ProductConfigurationListItem(
+            id=config.id,
+            product_family_id=config.product_family_id,
+            product_family_code=config.product_family.code,
+            name=config.name,
+            status=config.status,
+            values_count=len(config.values),
+        )
+        for config in configurations
+    ]
 
 
 @router.get("/{configuration_id}", response_model=ProductConfigurationRead)

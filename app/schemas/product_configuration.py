@@ -33,6 +33,15 @@ class AttributeValueRead(BaseModel):
     value: str | int | Decimal | bool | None
 
 
+class ProductConfigurationListItem(BaseModel):
+    id: int
+    product_family_id: int
+    product_family_code: str
+    name: str
+    status: str
+    values_count: int
+
+
 class ProductConfigurationRead(BaseModel):
     id: int
     product_family_id: int

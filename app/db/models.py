@@ -152,7 +152,11 @@ class ProductConfigurationModel(Base):
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     status: Mapped[ConfigurationStatus] = mapped_column(
-        SqlEnum(ConfigurationStatus, name="configuration_status_enum"),
+        SqlEnum(
+            ConfigurationStatus,
+            name="configuration_status_enum",
+            values_callable=lambda obj: [e.value for e in obj],
+        ),
         default=ConfigurationStatus.DRAFT,
         nullable=False,
     )
