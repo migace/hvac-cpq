@@ -54,7 +54,7 @@ class ProductRuleRead(BaseModel):
     operator: RuleOperatorEnum
     expected_value: str
     target_attribute_code: str
-    allowed_values: list[str]
+    allowed_values: list[str] = Field(default_factory=list)
     error_message: str
     is_active: bool
 

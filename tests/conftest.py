@@ -51,18 +51,20 @@ def testing_session_factory(test_engine: Engine) -> sessionmaker:
     )
 
 
-@pytest.fixture(autouse=True)
-def clean_database(test_engine: Engine) -> Generator[None, None, None]:
+def _truncate_all_tables(engine: Engine) -> None:
     table_names = [table.name for table in Base.metadata.sorted_tables]
     if not table_names:
-        yield
         return
-
-    with test_engine.begin() as connection:
+    with engine.begin() as connection:
         quoted_names = ", ".join(f'"{name}"' for name in table_names)
         connection.execute(text(f"TRUNCATE TABLE {quoted_names} RESTART IDENTITY CASCADE"))
 
+
+@pytest.fixture(autouse=True)
+def clean_database(test_engine: Engine) -> Generator[None, None, None]:
+    _truncate_all_tables(test_engine)
     yield
+    _truncate_all_tables(test_engine)
 
 
 @pytest.fixture

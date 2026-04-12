@@ -149,20 +149,14 @@ def register_exception_handlers(app: FastAPI) -> None:
     async def handle_missing_required_attributes(
             request: Request, exc: MissingRequiredAttributesError
     ) -> JSONResponse:
-        message = str(exc)
-        missing = []
-        prefix = "Missing required attributes: "
-        if message.startswith(prefix):
-            missing = [item.strip() for item in message[len(prefix):].split(",") if item.strip()]
-
-        logger.warning("missing_required_attributes", error=message, missing=missing)
+        logger.warning("missing_required_attributes", error=str(exc), missing=exc.missing)
         return build_error_response(
             request=request,
             status_code=400,
             error_type=type(exc).__name__,
-            message=message,
+            message=str(exc),
             code="missing_required_attributes",
-            details={"missing_attributes": missing},
+            details={"missing_attributes": exc.missing},
         )
 
     @app.exception_handler(EmptyConfigurationError)

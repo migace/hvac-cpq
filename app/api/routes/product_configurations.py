@@ -19,16 +19,6 @@ from app.services.order_code_service import OrderCodeService
 router = APIRouter(prefix="/product-configurations", tags=["product-configurations"])
 
 
-def _extract_value(value_obj) -> str | int | float | bool | None:
-    if value_obj.value_integer is not None:
-        return value_obj.value_integer
-    if value_obj.value_decimal is not None:
-        return value_obj.value_decimal
-    if value_obj.value_boolean is not None:
-        return value_obj.value_boolean
-    return value_obj.value_string
-
-
 def _to_read_model(configuration) -> ProductConfigurationRead:
     return ProductConfigurationRead(
         id=configuration.id,
@@ -41,7 +31,7 @@ def _to_read_model(configuration) -> ProductConfigurationRead:
                 attribute_name=value.attribute_definition.name,
                 attribute_type=value.attribute_definition.attribute_type.value,
                 unit=value.attribute_definition.unit,
-                value=_extract_value(value),
+                value=value.resolved_value,
             )
             for value in configuration.values
         ],

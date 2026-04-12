@@ -34,7 +34,7 @@ class ProductRuleService:
             operator=RuleOperator(payload.operator.value),
             expected_value=payload.expected_value,
             target_attribute_code=payload.target_attribute_code,
-            allowed_values=",".join(payload.allowed_values) if payload.allowed_values else None,
+            allowed_values=payload.allowed_values if payload.allowed_values else None,
             error_message=payload.error_message,
             is_active=payload.is_active,
         )

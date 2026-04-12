@@ -2,6 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.db.models import (
+    AttributeDefinitionModel,
     AttributeValueModel,
     ProductConfigurationModel,
     ProductFamilyModel,
@@ -16,8 +17,11 @@ class ProductConfigurationRepository:
         return self.session.scalar(
             select(ProductConfigurationModel)
             .options(
-                selectinload(ProductConfigurationModel.product_family).selectinload(
-                    ProductFamilyModel.attributes
+                selectinload(ProductConfigurationModel.product_family).options(
+                    selectinload(ProductFamilyModel.attributes).selectinload(
+                        AttributeDefinitionModel.enum_options
+                    ),
+                    selectinload(ProductFamilyModel.pricing_rules),
                 ),
                 selectinload(ProductConfigurationModel.values).selectinload(
                     AttributeValueModel.attribute_definition

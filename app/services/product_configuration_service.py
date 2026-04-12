@@ -3,8 +3,7 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import select
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session
 
 from app.db.models import (
     AttributeDefinitionModel,
@@ -12,7 +11,6 @@ from app.db.models import (
     AttributeValueModel,
     ProductConfigurationModel,
     ProductFamilyModel,
-    ProductRuleModel,
 )
 from app.domain.exceptions import (
     AttributeDefinitionNotFoundError,
@@ -25,7 +23,6 @@ from app.services.configuration_validator import ConfigurationValidator
 from app.services.rule_engine import RuleEngine
 from app.services.pricing_engine import PricingEngine, PricingResult
 
-from app.core.db_utils import commit_and_refresh
 from app.repositories.product_configuration_repository import ProductConfigurationRepository
 from app.repositories.product_family_repository import ProductFamilyRepository
 
@@ -86,9 +83,9 @@ class ProductConfigurationService:
         configuration.values.extend(value_models)
 
         self.configuration_repository.add(configuration)
-        commit_and_refresh(self.session, configuration)
+        self.session.commit()
 
-        return self.get_configuration(configuration.id)
+        return self.configuration_repository.get_by_id(configuration.id)
 
     def get_configuration(self, configuration_id: int) -> ProductConfigurationModel:
         configuration = self.configuration_repository.get_by_id(configuration_id)
@@ -213,7 +210,21 @@ class ProductConfigurationService:
             configuration_values=configuration_values,
         )
 
-    def build_configuration_values_map(self, payload: ProductConfigurationCreate) -> tuple[object, dict[str, Any]]:
+    def calculate_price_from_stored_values(
+        self,
+        family: ProductFamilyModel,
+        values: list[AttributeValueModel],
+    ) -> PricingResult:
+        configuration_values = {
+            v.attribute_definition.code: v.resolved_value
+            for v in values
+        }
+        return self.pricing_engine.calculate(
+            pricing_rules=list(family.pricing_rules),
+            configuration_values=configuration_values,
+        )
+
+    def build_configuration_values_map(self, payload: ProductConfigurationCreate) -> tuple[ProductFamilyModel, dict[str, Any]]:
         family = self.family_repository.get_by_id(payload.product_family_id)
         if not family:
             raise ProductFamilyNotFoundError(

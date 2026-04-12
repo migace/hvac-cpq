@@ -1,6 +1,10 @@
 from app.core.db_utils import commit_and_refresh
 from app.db.models import ProductPricingRuleModel, PricingRuleType, RuleOperator
-from app.domain.exceptions import ProductFamilyNotFoundError, ProductRuleDefinitionError
+from app.domain.exceptions import (
+    CurrencyMismatchError,
+    ProductFamilyNotFoundError,
+    ProductRuleDefinitionError,
+)
 from app.repositories.product_family_repository import ProductFamilyRepository
 from app.repositories.product_pricing_rule_repository import ProductPricingRuleRepository
 from app.schemas.product_pricing_rule import ProductPricingRuleCreate
@@ -19,12 +23,21 @@ class ProductPricingRuleService:
                 f"Product family with id '{payload.product_family_id}' not found."
             )
 
-        if payload.pricing_rule_type != payload.pricing_rule_type.BASE_PRICE:
+        if payload.pricing_rule_type != PricingRuleType.BASE_PRICE:
             available_codes = {attribute.code for attribute in family.attributes}
             if payload.if_attribute_code not in available_codes:
                 raise ProductRuleDefinitionError(
                     f"Attribute '{payload.if_attribute_code}' does not exist in family '{family.code}'."
                 )
+
+        existing_currencies = {
+            rule.currency for rule in family.pricing_rules if rule.is_active
+        }
+        if existing_currencies and payload.currency not in existing_currencies:
+            raise CurrencyMismatchError(
+                f"All pricing rules for family '{family.code}' must use the same currency. "
+                f"Existing rules use {', '.join(sorted(existing_currencies))}."
+            )
 
         rule = ProductPricingRuleModel(
             product_family_id=payload.product_family_id,

@@ -19,6 +19,4 @@ class ConfigurationValidator:
 
         missing_attributes = sorted(required_attributes - provided_attribute_codes)
         if missing_attributes:
-            raise MissingRequiredAttributesError(
-                "Missing required attributes: " + ", ".join(missing_attributes)
-            )
+            raise MissingRequiredAttributesError(missing_attributes)

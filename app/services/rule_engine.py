@@ -1,4 +1,4 @@
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from typing import Any
 
 from app.db.models import ProductRuleModel, RuleOperator, RuleType
@@ -40,8 +40,11 @@ class RuleEngine:
             return str(actual_value) != expected_value
 
         if operator in {RuleOperator.GT, RuleOperator.GTE, RuleOperator.LT, RuleOperator.LTE}:
-            actual_decimal = Decimal(str(actual_value))
-            expected_decimal = Decimal(expected_value)
+            try:
+                actual_decimal = Decimal(str(actual_value))
+                expected_decimal = Decimal(expected_value)
+            except InvalidOperation:
+                return False
 
             if operator == RuleOperator.GT:
                 return actual_decimal > expected_decimal
@@ -76,9 +79,7 @@ class RuleEngine:
             return
 
         if rule.rule_type == RuleType.RESTRICTS_VALUE:
-            allowed_values = {
-                item.strip() for item in (rule.allowed_values or "").split(",") if item.strip()
-            }
+            allowed_values = set(rule.allowed_values or [])
             if target_value is None or str(target_value) not in allowed_values:
                 raise RuleViolationError(rule.error_message)
             return

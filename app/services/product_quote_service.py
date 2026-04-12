@@ -3,19 +3,15 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import select
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session
 
 from app.db.models import (
-    AttributeDefinitionModel,
-    AttributeValueModel,
     ProductConfigurationModel,
-    ProductFamilyModel,
     ProductQuoteModel,
     QuoteStatus,
 )
 from app.domain.exceptions import ProductConfigurationNotFoundError, ProductQuoteNotFoundError
-from app.schemas.product_configuration import ProductConfigurationCreate
+from app.services.pricing_engine import PricingResult
 from app.services.product_configuration_service import ProductConfigurationService
 from app.services.quote_number_service import QuoteNumberService
 
@@ -28,7 +24,7 @@ class ProductQuoteService:
     def __init__(self, session: Session) -> None:
         self.session = session
         self.configuration_service = ProductConfigurationService(session)
-        self.quote_number_service = QuoteNumberService()
+        self.quote_number_service = QuoteNumberService(session)
         self.configuration_repository = ProductConfigurationRepository(session)
         self.quote_repository = ProductQuoteRepository(session)
 
@@ -39,20 +35,10 @@ class ProductQuoteService:
                 f"Product configuration with id '{configuration_id}' not found."
             )
 
-        payload = ProductConfigurationCreate(
-            product_family_id=configuration.product_family_id,
-            name=configuration.name,
-            status=configuration.status,
-            values=[
-                {
-                    "attribute_code": value.attribute_definition.code,
-                    "value": self._extract_value(value),
-                }
-                for value in configuration.values
-            ],
+        pricing_result = self.configuration_service.calculate_price_from_stored_values(
+            family=configuration.product_family,
+            values=list(configuration.values),
         )
-
-        pricing_result = self.configuration_service.calculate_configuration_price(payload)
 
         quote = ProductQuoteModel(
             product_configuration_id=configuration.id,
@@ -79,15 +65,6 @@ class ProductQuoteService:
     def list_quotes(self) -> list[ProductQuoteModel]:
         return self.quote_repository.list_all()
 
-    def _extract_value(self, value_obj: AttributeValueModel) -> Any:
-        if value_obj.value_integer is not None:
-            return value_obj.value_integer
-        if value_obj.value_decimal is not None:
-            return value_obj.value_decimal
-        if value_obj.value_boolean is not None:
-            return value_obj.value_boolean
-        return value_obj.value_string
-
     def _build_configuration_snapshot(self, configuration: ProductConfigurationModel) -> dict[str, Any]:
         family = configuration.product_family
         return {
@@ -103,13 +80,13 @@ class ProductQuoteService:
                     "attribute_name": value.attribute_definition.name,
                     "attribute_type": value.attribute_definition.attribute_type.value,
                     "unit": value.attribute_definition.unit,
-                    "value": self._serialize_value(self._extract_value(value)),
+                    "value": self._serialize_value(value.resolved_value),
                 }
                 for value in configuration.values
             ],
         }
 
-    def _build_pricing_snapshot(self, pricing_result) -> dict[str, Any]:
+    def _build_pricing_snapshot(self, pricing_result: PricingResult) -> dict[str, Any]:
         return {
             "currency": pricing_result.currency,
             "base_price": str(pricing_result.base_price),

@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
+from typing import Any
 
 from sqlalchemy import (
     Boolean,
@@ -10,12 +11,12 @@ from sqlalchemy import (
     Enum as SqlEnum,
     ForeignKey,
     Integer,
+    JSON,
     Numeric,
     String,
     Text,
     UniqueConstraint,
     func,
-    JSON
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -28,6 +29,12 @@ class AttributeType(str, Enum):
     DECIMAL = "decimal"
     BOOLEAN = "boolean"
     ENUM = "enum"
+
+
+class ConfigurationStatus(str, Enum):
+    DRAFT = "draft"
+    ACTIVE = "active"
+    ARCHIVED = "archived"
 
 
 class ProductFamilyModel(Base):
@@ -144,7 +151,11 @@ class ProductConfigurationModel(Base):
         index=True,
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    status: Mapped[str] = mapped_column(String(50), default="draft", nullable=False)
+    status: Mapped[ConfigurationStatus] = mapped_column(
+        SqlEnum(ConfigurationStatus, name="configuration_status_enum"),
+        default=ConfigurationStatus.DRAFT,
+        nullable=False,
+    )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -201,6 +212,16 @@ class AttributeValueModel(Base):
     configuration: Mapped["ProductConfigurationModel"] = relationship(back_populates="values")
     attribute_definition: Mapped["AttributeDefinitionModel"] = relationship(back_populates="values")
 
+    @property
+    def resolved_value(self) -> Any:
+        if self.value_integer is not None:
+            return self.value_integer
+        if self.value_decimal is not None:
+            return self.value_decimal
+        if self.value_boolean is not None:
+            return self.value_boolean
+        return self.value_string
+
 
 class RuleType(str, Enum):
     REQUIRES_ATTRIBUTE = "requires_attribute"
@@ -243,10 +264,10 @@ class ProductRuleModel(Base):
 
     target_attribute_code: Mapped[str] = mapped_column(String(100), nullable=False)
 
-    allowed_values: Mapped[str | None] = mapped_column(
-        Text,
+    allowed_values: Mapped[list[str] | None] = mapped_column(
+        JSON,
         nullable=True,
-        comment="Comma-separated values used by restricts_value rules.",
+        comment="List of allowed values used by restricts_value rules.",
     )
 
     error_message: Mapped[str] = mapped_column(Text, nullable=False)
@@ -286,7 +307,7 @@ class ProductPricingRuleModel(Base):
 
     if_attribute_code: Mapped[str | None] = mapped_column(String(100), nullable=True)
     operator: Mapped[RuleOperator | None] = mapped_column(
-        SqlEnum(RuleOperator, name="pricing_rule_operator_enum"),
+        SqlEnum(RuleOperator, name="rule_operator_enum", create_type=False),
         nullable=True,
     )
     expected_value: Mapped[str | None] = mapped_column(String(255), nullable=True)

@@ -18,7 +18,7 @@ def _to_read_model(rule) -> ProductRuleRead:
         operator=rule.operator.value,
         expected_value=rule.expected_value,
         target_attribute_code=rule.target_attribute_code,
-        allowed_values=rule.allowed_values.split(",") if rule.allowed_values else [],
+        allowed_values=rule.allowed_values or [],
         error_message=rule.error_message,
         is_active=rule.is_active,
     )
