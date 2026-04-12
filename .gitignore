@@ -1,4 +1,21 @@
+# IDE
 .idea
-.env
-cpq_hvac.egg-info/
+.vscode
+
+# Python
 __pycache__/
+*.egg-info/
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.pyc
+
+# Node
+node_modules/
+dist/
+
+# Turborepo
+.turbo/
+
+# Environment
+.env

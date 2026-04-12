@@ -1,9 +1,3 @@
-
----
-
-# `docs/data-ingestion.md`
-
-```md
 # Data ingestion approach
 
 ## Goal

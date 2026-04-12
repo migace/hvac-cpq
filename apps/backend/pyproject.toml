@@ -2,7 +2,6 @@
 name = "cpq-hvac"
 version = "0.1.0"
 description = "Production-ready CPQ system for HVAC using Python, FastAPI and EAV"
-readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115.0,<1.0.0",

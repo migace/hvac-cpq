@@ -22,12 +22,17 @@ The main challenge is to design a product model that supports all of that withou
 
 ## What was built
 
-This PoC implements a **data-driven CPQ backend core** for HVAC products using:
-- Python
-- FastAPI
-- SQLAlchemy 2.x
-- PostgreSQL
-- Alembic
+This PoC implements a **data-driven CPQ system** for HVAC products, structured as a **Turborepo monorepo**.
+
+### Tech stack
+
+| Layer | Technology |
+|---|---|
+| Backend | Python, FastAPI, SQLAlchemy 2.x, Alembic |
+| Database | PostgreSQL 16 |
+| Frontend | React, TypeScript, Vite |
+| Monorepo | Turborepo, npm workspaces |
+| Infrastructure | Docker Compose (3 services) |
 
 The first modeled category is **fire dampers**.
 
@@ -70,22 +75,41 @@ The first modeled category is **fire dampers**.
 - example technical parameter calculation,
 - demo seed for 3 fire damper families.
 
+### Full-stack infrastructure
+- Turborepo monorepo with backend and frontend apps,
+- Docker Compose with PostgreSQL, backend API, and frontend,
+- API proxy in both development (Vite) and production (nginx) modes.
+
+---
+
+## Repository structure
+
+```
+hvac-cpq/
+├── apps/
+│   ├── backend/     # Python FastAPI — CPQ API, business logic, persistence
+│   └── frontend/    # React + TypeScript — user interface
+├── docs/            # project-wide documentation
+├── docker-compose.yml
+├── turbo.json
+└── package.json
+```
+
 ---
 
 ## Architecture summary
 
 The system is structured into:
-- API layer,
-- service layer,
-- domain layer,
-- repository layer,
-- persistence layer.
+- **backend** — API layer, service layer, domain layer, repository layer, persistence layer,
+- **frontend** — React SPA with Vite, API proxy to backend,
+- **infrastructure** — Docker Compose with 3 services (db, api, frontend).
 
 This separation keeps:
 - data model flexible,
 - validation explicit,
 - pricing explicit,
 - quote generation stable,
+- frontend and backend independently buildable,
 - future extension easier.
 
 ---
@@ -101,6 +125,11 @@ That is why:
 - rules are stored separately,
 - pricing is stored separately,
 - quotes store snapshots.
+
+The monorepo with Turborepo was chosen to:
+- keep backend and frontend in one repository,
+- share a single Docker Compose for full-stack development,
+- enable unified task execution (dev, build, lint, test).
 
 This makes the model much more suitable for a real HVAC manufacturer environment.
 
@@ -132,7 +161,9 @@ For the PoC, the most realistic approach is semi-manual ingestion supported by s
 - support for multiple product families,
 - family-specific rule logic,
 - family-specific pricing logic,
-- historical quote persistence.
+- historical quote persistence,
+- monorepo structure ready for full-stack development,
+- Docker Compose for one-command startup.
 
 ---
 
@@ -141,6 +172,7 @@ For the PoC, the most realistic approach is semi-manual ingestion supported by s
 This is intentionally still a PoC.
 
 Not yet fully implemented:
+- frontend UI for product configuration workflow,
 - richer technical formula engine,
 - data-driven order code templates,
 - full ingestion pipeline with staging tables,
@@ -155,7 +187,8 @@ Not yet fully implemented:
 The PoC is not a finished commercial product, but it demonstrates:
 - how I approach the problem,
 - how I model complex configurable products,
-- how I structure a scalable backend foundation,
-- how I separate domain data, rules, pricing, and business outputs.
+- how I structure a scalable full-stack foundation,
+- how I separate domain data, rules, pricing, and business outputs,
+- how I organize a monorepo for a real-world project.
 
 The solution is intentionally built as a strong architectural core that can be extended toward a full HVAC product selection platform.

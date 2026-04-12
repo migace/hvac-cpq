@@ -2,7 +2,11 @@
 
 ## Project overview
 
-This repository contains a **data-driven CPQ PoC for HVAC products** implemented in **Python** with **FastAPI**, **SQLAlchemy 2.x**, **PostgreSQL**, and **Alembic**.
+This repository is a **Turborepo monorepo** containing a **data-driven CPQ PoC for HVAC products**.
+
+The monorepo consists of:
+- **backend** (`apps/backend/`) — Python, FastAPI, SQLAlchemy 2.x, PostgreSQL, Alembic,
+- **frontend** (`apps/frontend/`) — React, TypeScript, Vite.
 
 The prototype focuses on **fire dampers** as the first HVAC category, but the architecture is intentionally designed to support:
 - many product categories,
@@ -17,6 +21,88 @@ The main goal of the project is to model **configurable HVAC products** without 
 
 ---
 
+## Repository structure
+
+```
+hvac-cpq/
+├── apps/
+│   ├── backend/            # Python FastAPI backend
+│   │   ├── app/            # application code (api, core, db, domain, services, etc.)
+│   │   ├── alembic/        # database migrations
+│   │   ├── tests/          # backend tests
+│   │   ├── scripts/        # utility scripts
+│   │   ├── Dockerfile
+│   │   ├── pyproject.toml
+│   │   ├── alembic.ini
+│   │   └── .env.example
+│   └── frontend/           # React + TypeScript frontend
+│       ├── src/            # React source code
+│       ├── public/         # static assets
+│       ├── Dockerfile      # multi-stage: node build -> nginx
+│       ├── nginx.conf      # SPA serving + API proxy
+│       ├── vite.config.ts
+│       └── package.json
+├── docs/                   # project-wide documentation
+├── docker-compose.yml      # 3 services: db, api, frontend
+├── turbo.json              # Turborepo task pipeline
+├── package.json            # root workspaces config
+└── CLAUDE.md               # this file
+```
+
+---
+
+## Running the project
+
+### Local development
+
+```bash
+# Install Node dependencies (Turborepo + frontend)
+npm install
+
+# Run all dev servers via Turborepo
+npm run dev
+
+# Run only frontend
+npx turbo run dev --filter=@hvac-cpq/frontend
+
+# Run only backend (requires Python venv in apps/backend/)
+npx turbo run dev --filter=@hvac-cpq/backend
+```
+
+Backend requires a Python virtual environment set up in `apps/backend/`:
+```bash
+cd apps/backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -e .[dev]
+```
+
+### Docker Compose
+
+```bash
+# Start all 3 services: PostgreSQL, backend API, frontend
+docker compose up
+
+# Start only backend + database
+docker compose up db api
+```
+
+Services:
+- `db` — PostgreSQL 16 on port `5432`,
+- `api` — FastAPI backend on port `8000`,
+- `frontend` — React app (nginx) on port `3000`.
+
+### Turborepo commands
+
+| Command | Description |
+|---|---|
+| `npm run dev` | Start all dev servers |
+| `npm run build` | Build all apps |
+| `npm run lint` | Lint all apps |
+| `npm run test` | Run all tests |
+
+---
+
 ## Business context
 
 HVAC manufacturers typically have:
@@ -27,63 +113,25 @@ HVAC manufacturers typically have:
 - pricing logic depending on selected options,
 - product knowledge distributed across PDFs, Excel files, legacy tools, and expert knowledge.
 
-This project addresses that by building a **single CPQ-oriented backend core** where:
+This project addresses that by building a **CPQ-oriented monorepo** where:
 - a product family defines the structure of a configurable product,
 - attribute definitions describe available parameters,
 - configurations store concrete user selections,
 - rules validate allowed combinations,
 - pricing rules calculate price,
 - technical calculation services compute selected technical outputs,
-- quotes persist historical pricing and configuration snapshots.
+- quotes persist historical pricing and configuration snapshots,
+- the frontend provides the user interface for product configuration.
 
 ---
 
-## High-level architecture
+## Architecture
 
-The project uses a layered architecture.
+The backend (`apps/backend/`) uses a layered architecture: API → Service → Domain → Repository → Persistence, with cross-cutting concerns (logging, request correlation, error formatting).
 
-### API layer
-Responsible for:
-- FastAPI routes,
-- request/response schemas,
-- dependency injection,
-- HTTP error mapping.
+The frontend (`apps/frontend/`) is a React + TypeScript SPA built with Vite. In dev mode, Vite proxies `/api/*` to `http://localhost:8000`. In Docker, nginx serves the SPA and proxies `/api/` to the backend.
 
-### Service layer
-Responsible for:
-- orchestration of use cases,
-- validation flow,
-- rule evaluation,
-- pricing calculation,
-- order code generation,
-- technical calculations,
-- quote generation.
-
-### Domain layer
-Responsible for:
-- domain exceptions,
-- business rules and constraints,
-- semantic meaning of product configuration.
-
-### Repository layer
-Responsible for:
-- fetching and storing ORM entities,
-- encapsulating common SQLAlchemy query patterns,
-- loading related entities consistently.
-
-### Persistence layer
-Responsible for:
-- SQLAlchemy ORM models,
-- PostgreSQL schema,
-- Alembic migrations,
-- DB session lifecycle.
-
-### Cross-cutting concerns
-Responsible for:
-- structured logging,
-- request correlation,
-- error formatting,
-- observability hooks.
+For detailed architecture description, see `docs/architecture.md`.
 
 ---
 
@@ -163,71 +211,17 @@ Supports seeding of demo families such as:
 
 ## Domain model
 
-### Core entities
+Core entities: `ProductFamily`, `AttributeDefinition`, `AttributeOption`, `ProductConfiguration`, `AttributeValue`, `ProductRule`, `ProductPricingRule`, `ProductQuote`.
 
-#### `ProductFamily`
-Represents one product family, for example:
-- rectangular fire damper,
-- round fire damper,
-- multi-blade fire damper.
+Main tables: `product_families`, `attribute_definitions`, `attribute_options`, `product_configurations`, `attribute_values`, `product_rules`, `product_pricing_rules`, `product_quotes`.
 
-#### `AttributeDefinition`
-Represents a dynamic attribute belonging to a product family.
-Examples:
-- width,
-- height,
-- diameter,
-- fire_class,
-- actuator_type,
-- installation_type,
-- blade_type.
+Key design decisions:
+- EAV is used only for **configuration values**, not for every aspect of the domain,
+- business rules are modeled separately in `product_rules`,
+- pricing is separate from configuration storage,
+- quotes store historical configuration and pricing snapshots (immutable).
 
-#### `AttributeOption`
-Represents enum values available for enum-type attributes.
-
-#### `ProductConfiguration`
-Represents one concrete product configuration built by a user.
-
-#### `AttributeValue`
-Represents a concrete selected value for one attribute in one configuration.
-This is the actual EAV layer.
-
-#### `ProductRule`
-Represents business validation rules between attributes.
-
-#### `ProductPricingRule`
-Represents pricing logic for a family.
-
-#### `ProductQuote`
-Represents a generated business offer with historical snapshots.
-
----
-
-## Data model summary
-
-Main tables:
-- `product_families`
-- `attribute_definitions`
-- `attribute_options`
-- `product_configurations`
-- `attribute_values`
-- `product_rules`
-- `product_pricing_rules`
-- `product_quotes`
-
-### Important design decisions
-
-#### EAV is used only where it makes sense
-EAV is used for **configuration values**, not for every aspect of the domain.
-
-#### Rules are not embedded in EAV
-Business logic is modeled separately in `product_rules`.
-
-#### Pricing is modeled separately
-Pricing is not mixed into configuration storage.
-
-#### Quote stores snapshots
-A quote stores historical configuration and pricing snapshots so that changes in rules or prices do not retroactively change old offers.
+For full ERD and entity descriptions, see `docs/erd.md`.
 
 ---
 
@@ -268,7 +262,7 @@ Computes selected technical outputs from valid configuration input.
 
 ## API overview
 
-The project exposes API endpoints for:
+The backend exposes API endpoints for:
 - health check,
 - product families,
 - product configurations,
@@ -280,6 +274,8 @@ The project exposes API endpoints for:
 - technical parameter calculation.
 
 The routing structure should stay clear and resource-oriented.
+
+The frontend communicates with the backend via `/api/*` proxy (both in dev and production).
 
 ---
 
@@ -324,16 +320,22 @@ The request id should be preserved in:
 
 ## Testing strategy
 
+### Backend tests
+Located in `apps/backend/tests/`.
+
 The test setup is designed to keep application development data separate from test data.
 
-### Current testing principles
+#### Current testing principles
 - test DB must be isolated from dev DB,
 - API tests should use dependency overrides,
 - tests should validate both happy path and failure path,
 - rules, pricing, order code generation, and technical calculations should be covered.
 
-### Recommended direction
+#### Recommended direction
 Use a dedicated PostgreSQL test container instead of SQLite when validating production-like behavior.
+
+### Frontend tests
+Frontend testing infrastructure can be extended with Vitest.
 
 ---
 
@@ -352,27 +354,22 @@ The seed should include:
 - business rules,
 - pricing rules.
 
+### Running the seed
+
+```bash
+cd apps/backend
+python -m scripts.seed_demo_data
+```
+
+The script is located at `apps/backend/scripts/seed_demo_data.py`. It skips families that already exist in the database.
+
 ---
 
 ## Product data ingestion approach
 
-This project assumes that HVAC product knowledge usually comes from:
-- PDF catalogs,
-- Excel sheets,
-- legacy HTML tools,
-- engineering know-how.
+PDF and Excel should be treated as **source materials**, not as the long-term source of truth. The structured CPQ data model in PostgreSQL is the operational source of truth.
 
-### Recommended ingestion pipeline
-1. collect and inventory source materials,
-2. extract product families and attribute knowledge,
-3. normalize naming and units,
-4. map to staging structures,
-5. validate data quality,
-6. import into CPQ data model.
-
-### Important principle
-PDF and Excel should be treated as **source materials**, not as the long-term source of truth.
-The long-term source of truth should be the structured CPQ data model in PostgreSQL.
+For the full ingestion pipeline description, see `docs/data-ingestion.md`.
 
 ---
 
@@ -409,36 +406,21 @@ This service is intended to evolve into a more advanced formula/calculation engi
 
 ---
 
-## Current architectural strengths
+## Docker and infrastructure
 
-This project currently demonstrates:
-- a data-driven approach,
-- separation of product definition and configuration,
-- support for dynamic attributes,
-- explicit business rules,
-- explicit pricing rules,
-- historical quote snapshots,
-- extensibility toward more HVAC categories and families.
+Docker Compose (`docker-compose.yml`) runs 3 services: `db` (PostgreSQL 16, port 5432), `api` (FastAPI, port 8000), `frontend` (nginx, port 3000).
 
-These are the most important qualities of the current PoC.
+Backend environment: `apps/backend/.env` for local dev, `docker-compose.yml` env block for Docker. See `apps/backend/.env.example` for the full list.
+
+For detailed infrastructure description, see `docs/architecture.md`.
 
 ---
 
-## Known limitations / future improvements
+## Current status
 
-The project is intentionally a PoC and does **not** yet implement the full production scope.
+This project is intentionally a PoC. It demonstrates data-driven product modeling, dynamic attributes, business rules, pricing, quote snapshots, and full-stack Docker Compose setup with Turborepo.
 
-Examples of future improvements:
-- richer formula engine for technical calculations,
-- data-driven order code templates in DB,
-- ingestion pipeline with staging tables,
-- stronger migration-based DB testing,
-- quote approval workflows,
-- richer observability,
-- metrics and tracing,
-- deployment hardening,
-- better handling of concurrency in quote number generation,
-- support for more advanced rule composition (AND/OR, grouped conditions).
+For a full summary of strengths and limitations, see `docs/recruitment-submission.md`.
 
 ---
 
@@ -452,6 +434,13 @@ Examples of future improvements:
 - keep quote snapshots immutable,
 - prefer explicit business logic over hidden ORM magic,
 - prefer clear code over premature abstraction.
+
+### Monorepo conventions
+- backend code lives in `apps/backend/`,
+- frontend code lives in `apps/frontend/`,
+- project-wide documentation lives in `docs/`,
+- root `package.json` defines workspaces and Turborepo scripts,
+- each app has its own `Dockerfile` and can be built independently.
 
 ### When adding new HVAC families
 For every new family, think in this order:
@@ -488,7 +477,7 @@ Keep `CLAUDE.md` concise enough to be useful as a high-signal project guide.
 
 Detailed materials belong in `docs/`.
 
-Recommended files:
+Current documentation files:
 - `docs/architecture.md`
 - `docs/erd.md`
 - `docs/data-ingestion.md`
@@ -500,7 +489,7 @@ Recommended files:
 ## Recommended next steps
 
 The most valuable next improvements are:
-1. move detailed architecture and ERD content into `docs/`,
+1. build frontend UI for product configuration workflow,
 2. integrate technical calculation results into quote snapshots,
 3. improve demo flow documentation,
 4. expand observability and deployment readiness,

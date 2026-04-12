@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This project is a **data-driven CPQ backend PoC for HVAC manufacturers**.
+This project is a **data-driven CPQ PoC for HVAC manufacturers**, structured as a **Turborepo monorepo**.
 
 The initial implementation focuses on fire dampers, but the architecture is intended to scale to:
 - multiple HVAC categories,
@@ -15,9 +15,33 @@ The initial implementation focuses on fire dampers, but the architecture is inte
 
 ---
 
-## Architectural style
+## Monorepo structure
 
-The project follows a layered architecture with explicit separation of concerns.
+The project uses **Turborepo** to manage a monorepo with two applications:
+
+| App | Path | Stack | Purpose |
+|---|---|---|---|
+| Backend | `apps/backend/` | Python, FastAPI, SQLAlchemy 2.x, PostgreSQL, Alembic | CPQ API, business logic, persistence |
+| Frontend | `apps/frontend/` | React, TypeScript, Vite | User interface for product configuration |
+
+### Why Turborepo
+- unified task runner (`dev`, `build`, `lint`, `test`) across all apps,
+- parallel execution of independent tasks,
+- caching of build outputs,
+- single `docker-compose.yml` orchestrates all services.
+
+### Root-level files
+- `package.json` — workspace definitions and Turborepo scripts,
+- `turbo.json` — task pipeline configuration,
+- `docker-compose.yml` — full-stack Docker orchestration,
+- `docs/` — project-wide documentation,
+- `CLAUDE.md` — project guide.
+
+---
+
+## Backend architectural style
+
+The backend (`apps/backend/`) follows a layered architecture with explicit separation of concerns.
 
 ### API layer
 Responsible for:
@@ -64,6 +88,42 @@ Responsible for:
 
 ---
 
+## Frontend architectural style
+
+The frontend (`apps/frontend/`) is a React SPA built with Vite and TypeScript.
+
+### Development mode
+- Vite dev server on port `3000`,
+- API proxy: `/api/*` requests are rewritten and proxied to `http://localhost:8000`.
+
+### Production mode (Docker)
+- Multi-stage Docker build:
+  - **Stage 1:** `node:24-alpine` builds the static bundle,
+  - **Stage 2:** `nginx:alpine` serves the built files.
+- nginx handles:
+  - SPA routing (`try_files` fallback to `index.html`),
+  - API proxy (`/api/` → `http://api:8000/`).
+
+---
+
+## Infrastructure
+
+### Docker Compose
+
+The `docker-compose.yml` at the repository root defines 3 services:
+
+| Service | Image / Build context | Port | Notes |
+|---|---|---|---|
+| `db` | `postgres:16` | `5432` | Healthcheck via `pg_isready` |
+| `api` | `./apps/backend` | `8000` | Waits for db health before starting |
+| `frontend` | `./apps/frontend` | `3000` | Depends on api service |
+
+### Environment configuration
+- **Local dev:** `apps/backend/.env` with `DATABASE_URL` pointing to `localhost`,
+- **Docker:** environment variables inline in `docker-compose.yml` with `DATABASE_URL` pointing to `db` hostname.
+
+---
+
 ## Why this architecture
 
 The main business problem is not just storing products. The system must support:
@@ -78,6 +138,8 @@ Because of that:
 - configuration storage must be flexible,
 - validation and pricing must be separated from storage,
 - quotes must preserve historical business state.
+
+The monorepo structure ensures that backend and frontend evolve together with shared tooling and a single deployment pipeline.
 
 ---
 
@@ -269,7 +331,9 @@ The current PoC already demonstrates:
 - explicit pricing rules,
 - technical output generation,
 - order code generation,
-- quote snapshot persistence.
+- quote snapshot persistence,
+- monorepo structure with Turborepo,
+- full-stack Docker Compose setup.
 
 This is the current CPQ core of the project.
 
@@ -280,6 +344,7 @@ This is the current CPQ core of the project.
 The project is still a PoC.
 
 Not yet implemented:
+- frontend UI for product configuration workflow,
 - full formula engine,
 - data-driven order code templates,
 - staging-based ingestion pipeline,

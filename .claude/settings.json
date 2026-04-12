@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m pytest -v)",
+      "Bash(python -m pytest tests/test_product_configurations.py -v)",
+      "Bash(git mv:*)",
+      "Bash(npm --version)",
+      "Bash(npm create:*)",
+      "Bash(npm install:*)",
+      "Bash(npx turbo:*)"
+    ]
+  }
+}
