@@ -18,6 +18,7 @@ from app.services.quote_number_service import QuoteNumberService
 from app.core.db_utils import commit_and_refresh
 from app.repositories.product_configuration_repository import ProductConfigurationRepository
 from app.repositories.product_quote_repository import ProductQuoteRepository
+from app.services.order_code_service import OrderCodeService
 
 
 class ProductQuoteService:
@@ -67,6 +68,22 @@ class ProductQuoteService:
 
     def _build_configuration_snapshot(self, configuration: ProductConfigurationModel) -> dict[str, Any]:
         family = configuration.product_family
+        values_list = [
+            {
+                "attribute_code": value.attribute_definition.code,
+                "attribute_name": value.attribute_definition.name,
+                "attribute_type": value.attribute_definition.attribute_type.value,
+                "unit": value.attribute_definition.unit,
+                "value": self._serialize_value(value.resolved_value),
+            }
+            for value in configuration.values
+        ]
+
+        order_code = self._try_generate_order_code(
+            family.code,
+            {v["attribute_code"]: v["value"] for v in values_list},
+        )
+
         return {
             "product_family_id": family.id,
             "product_family_code": family.code,
@@ -74,17 +91,16 @@ class ProductQuoteService:
             "configuration_id": configuration.id,
             "configuration_name": configuration.name,
             "status": configuration.status,
-            "values": [
-                {
-                    "attribute_code": value.attribute_definition.code,
-                    "attribute_name": value.attribute_definition.name,
-                    "attribute_type": value.attribute_definition.attribute_type.value,
-                    "unit": value.attribute_definition.unit,
-                    "value": self._serialize_value(value.resolved_value),
-                }
-                for value in configuration.values
-            ],
+            "order_code": order_code,
+            "values": values_list,
         }
+
+    def _try_generate_order_code(self, family_code: str, values: dict[str, Any]) -> str | None:
+        try:
+            service = OrderCodeService()
+            return service.generate(family_code=family_code, configuration_values=values)
+        except Exception:
+            return None
 
     def _build_pricing_snapshot(self, pricing_result: PricingResult) -> dict[str, Any]:
         return {

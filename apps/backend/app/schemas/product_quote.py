@@ -1,3 +1,4 @@
+from datetime import datetime
 from decimal import Decimal
 from enum import Enum
 from typing import Any
@@ -27,5 +28,6 @@ class ProductQuoteRead(BaseModel):
     total_price: Decimal
     configuration_snapshot: dict[str, Any]
     pricing_snapshot: dict[str, Any]
+    created_at: datetime
 
     model_config = {"from_attributes": True}
