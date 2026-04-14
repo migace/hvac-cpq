@@ -340,6 +340,27 @@ export function useConfigurator() {
     }
   }, [state.selectedFamily, buildPayload]);
 
+  const applySuggestedConfiguration = useCallback(
+    (familyId: number, values: Record<string, string | number | boolean>) => {
+      const family = state.families.find((f) => f.id === familyId);
+      if (!family) return;
+
+      const touched: Record<string, boolean> = {};
+      for (const code of Object.keys(values)) {
+        touched[code] = true;
+      }
+
+      setState((s) => ({
+        ...s,
+        selectedFamily: family,
+        values,
+        touched: { ...s.touched, ...touched },
+        quote: null,
+      }));
+    },
+    [state.families]
+  );
+
   const hasValues = Object.values(state.values).some(
     (v) => v !== "" && v !== undefined && v !== null
   );
@@ -365,6 +386,7 @@ export function useConfigurator() {
     touchField,
     resetValues,
     requestQuote,
+    applySuggestedConfiguration,
   };
 }
 

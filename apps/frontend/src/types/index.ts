@@ -92,3 +92,35 @@ export interface ApiError {
   request_id: string;
   details?: Record<string, unknown>;
 }
+
+/* ── AI Agent types ── */
+
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface SuggestedConfiguration {
+  family_id: number;
+  family_code: string;
+  values: Record<string, string | number | boolean>;
+}
+
+export interface AgentMetrics {
+  model: string;
+  input_tokens: number;
+  output_tokens: number;
+  total_tokens: number;
+  llm_calls: number;
+  tool_calls_count: number;
+  tools_used: string[];
+  total_duration_ms: number;
+  estimated_cost_usd: number;
+}
+
+export type AgentSSEEvent =
+  | { type: "delta"; content: string }
+  | { type: "tool_call"; name: string; arguments: Record<string, unknown> }
+  | { type: "tool_result"; name: string; result: Record<string, unknown> }
+  | { type: "done"; metrics: AgentMetrics }
+  | { type: "error"; message: string };

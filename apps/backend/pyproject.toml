@@ -16,6 +16,7 @@ dependencies = [
     "opentelemetry-sdk>=1.27.0,<2.0.0",
     "opentelemetry-instrumentation-fastapi>=0.48b0,<1.0.0",
     "opentelemetry-instrumentation-sqlalchemy>=0.48b0,<1.0.0",
+    "openai>=1.40.0,<2.0.0",
 ]
 
 [project.optional-dependencies]

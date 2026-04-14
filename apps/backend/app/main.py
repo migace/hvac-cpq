@@ -8,6 +8,7 @@ from app.api.routes.product_configurations import router as product_configuratio
 from app.api.routes.product_rules import router as product_rules_router
 from app.api.routes.product_pricing_rules import router as product_pricing_rules_router
 from app.api.routes.product_quotes import router as product_quotes_router
+from app.api.routes.agent import router as agent_router
 
 from app.core.config import get_settings
 from app.core.exceptions import register_exception_handlers
@@ -47,6 +48,7 @@ def create_app() -> FastAPI:
     app.include_router(product_rules_router)
     app.include_router(product_pricing_rules_router)
     app.include_router(product_quotes_router)
+    app.include_router(agent_router)
 
     return app
 

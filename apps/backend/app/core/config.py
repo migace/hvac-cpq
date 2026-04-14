@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
     otel_enabled: bool = Field(default=False, alias="OTEL_ENABLED")
 
+    openai_api_key: str | None = Field(default=None, alias="OPENAI_API_KEY")
+    openai_model: str = Field(default="gpt-4.1-nano", alias="OPENAI_MODEL")
+
 
 @lru_cache
 def get_settings() -> Settings:

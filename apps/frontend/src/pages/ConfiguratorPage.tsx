@@ -13,6 +13,8 @@ import FamilySelector from "../components/FamilySelector";
 import ConfigurationForm from "../components/ConfigurationForm";
 import ResultsPanel from "../components/ResultsPanel";
 import MobileResultsBar from "../components/MobileResultsBar";
+import ChatPanel from "../components/ChatPanel";
+import type { SuggestedConfiguration } from "../types";
 
 export default function ConfiguratorPage() {
   const {
@@ -35,7 +37,12 @@ export default function ConfiguratorPage() {
     touchField,
     resetValues,
     requestQuote,
+    applySuggestedConfiguration,
   } = useConfigurator();
+
+  const handleSuggestedConfig = (config: SuggestedConfiguration) => {
+    applySuggestedConfiguration(config.family_id, config.values);
+  };
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -158,6 +165,8 @@ export default function ConfiguratorPage() {
           )}
         </>
       )}
+
+      <ChatPanel onSuggestedConfiguration={handleSuggestedConfig} />
     </>
   );
 }
