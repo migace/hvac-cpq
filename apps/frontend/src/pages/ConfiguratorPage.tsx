@@ -29,6 +29,7 @@ export default function ConfiguratorPage() {
     fieldErrors,
     generalErrors,
     disabledFields,
+    requiredByRule,
     hasValues,
     quote,
     saving,
@@ -122,6 +123,7 @@ export default function ConfiguratorPage() {
                     values={values}
                     fieldErrors={fieldErrors}
                     disabledFields={disabledFields}
+                    ruleWarnings={requiredByRule}
                     onChange={setValue}
                     onBlur={touchField}
                   />

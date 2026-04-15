@@ -1,5 +1,7 @@
 # HVAC CPQ PoC
 
+[![CI](https://github.com/migace/hvac-cpq/actions/workflows/ci.yml/badge.svg)](https://github.com/migace/hvac-cpq/actions/workflows/ci.yml)
+
 A **data-driven CPQ backend PoC for HVAC manufacturers** built in **Python** with **FastAPI**, **SQLAlchemy 2.x**, **PostgreSQL**, and **Alembic**.
 
 This project was created as as weekend-project focused on designing a **product selection/configuration system** for HVAC manufacturers with complex, configurable product portfolios.

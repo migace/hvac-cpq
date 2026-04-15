@@ -186,6 +186,37 @@ export function useConfigurator() {
     return disabled;
   }, [state.selectedFamily, state.values]);
 
+  // --- Evaluate rules to determine conditionally required fields ---
+  const requiredByRule = useMemo((): Record<string, string> => {
+    if (!state.selectedFamily?.rules) return {};
+    const hints: Record<string, string> = {};
+    for (const rule of state.selectedFamily.rules) {
+      if (!rule.is_active) continue;
+      if (rule.rule_type !== "requires_attribute") continue;
+      const currentValue = state.values[rule.if_attribute_code];
+      if (currentValue === undefined || currentValue === "" || currentValue === null) continue;
+      const actual = String(currentValue);
+      const expected = rule.expected_value;
+      let matches = false;
+      switch (rule.operator) {
+        case "eq": matches = actual === expected; break;
+        case "neq": matches = actual !== expected; break;
+        case "gt": matches = Number(actual) > Number(expected); break;
+        case "gte": matches = Number(actual) >= Number(expected); break;
+        case "lt": matches = Number(actual) < Number(expected); break;
+        case "lte": matches = Number(actual) <= Number(expected); break;
+      }
+      if (matches) {
+        const targetValue = state.values[rule.target_attribute_code];
+        const targetEmpty = targetValue === undefined || targetValue === "" || targetValue === null;
+        if (targetEmpty) {
+          hints[rule.target_attribute_code] = rule.error_message;
+        }
+      }
+    }
+    return hints;
+  }, [state.selectedFamily, state.values]);
+
   // --- Client-side field validation ---
   const clientFieldErrors = useMemo(() => {
     if (!state.selectedFamily) return {};
@@ -417,6 +448,7 @@ export function useConfigurator() {
     saving: state.saving,
     fieldErrors,
     disabledFields,
+    requiredByRule,
     generalErrors,
     hasValues,
     canGenerateQuote,

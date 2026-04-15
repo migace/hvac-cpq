@@ -15,6 +15,7 @@ interface ConfigurationFormProps {
   values: Record<string, string | number | boolean>;
   fieldErrors: Record<string, string>;
   disabledFields?: Record<string, string>;
+  ruleWarnings?: Record<string, string>;
   onChange: (code: string, value: string | number | boolean) => void;
   onBlur: (code: string) => void;
 }
@@ -24,6 +25,7 @@ export default function ConfigurationForm({
   values,
   fieldErrors,
   disabledFields = {},
+  ruleWarnings = {},
   onChange,
   onBlur,
 }: ConfigurationFormProps) {
@@ -63,6 +65,7 @@ export default function ConfigurationForm({
               attribute={attr}
               value={values[attr.code]}
               error={fieldErrors[attr.code]}
+              warning={ruleWarnings[attr.code]}
               onChange={onChange}
               onBlur={onBlur}
               inputRef={i === 0 ? firstRequiredRef : undefined}
@@ -82,6 +85,7 @@ export default function ConfigurationForm({
               attribute={attr}
               value={disabledFields[attr.code] ? undefined : values[attr.code]}
               error={fieldErrors[attr.code]}
+              warning={ruleWarnings[attr.code]}
               disabled={!!disabledFields[attr.code]}
               helperOverride={disabledFields[attr.code]}
               onChange={onChange}
@@ -98,6 +102,7 @@ interface AttributeFieldProps {
   attribute: AttributeDefinition;
   value: string | number | boolean | undefined;
   error: string | undefined;
+  warning?: string;
   disabled?: boolean;
   helperOverride?: string;
   onChange: (code: string, value: string | number | boolean) => void;
@@ -109,6 +114,7 @@ function AttributeField({
   attribute,
   value,
   error,
+  warning,
   disabled = false,
   helperOverride,
   onChange,
@@ -119,6 +125,14 @@ function AttributeField({
     attribute;
 
   const hasError = !disabled && !!error;
+  const hasWarning = !disabled && !error && !!warning;
+
+  function helperText(fallback: string | null | undefined): React.ReactNode {
+    if (disabled) return helperOverride;
+    if (error) return error;
+    if (warning) return <span style={{ color: "#ed6c02" }}>{warning}</span>;
+    return fallback;
+  }
 
   switch (attribute_type) {
     case "enum":
@@ -132,7 +146,8 @@ function AttributeField({
           required={is_required}
           disabled={disabled}
           error={hasError}
-          helperText={disabled ? helperOverride : (error || attribute.description)}
+          color={hasWarning ? "warning" : undefined}
+          helperText={helperText(attribute.description)}
           fullWidth
           size="small"
           inputRef={inputRef}
@@ -164,7 +179,8 @@ function AttributeField({
           required={is_required}
           disabled={disabled}
           error={hasError}
-          helperText={disabled ? helperOverride : (error || buildRangeHint(attribute))}
+          color={hasWarning ? "warning" : undefined}
+          helperText={helperText(buildRangeHint(attribute))}
           fullWidth
           size="small"
           inputRef={inputRef}
@@ -199,7 +215,8 @@ function AttributeField({
           required={is_required}
           disabled={disabled}
           error={hasError}
-          helperText={disabled ? helperOverride : (error || buildRangeHint(attribute))}
+          color={hasWarning ? "warning" : undefined}
+          helperText={helperText(buildRangeHint(attribute))}
           fullWidth
           size="small"
           inputRef={inputRef}

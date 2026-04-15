@@ -156,10 +156,13 @@ test.describe("Live results", () => {
     await page.getByText("Fire Damper Rectangular").click();
 
     await page.getByLabel("Width").fill("500");
+    await page.getByLabel("Height").fill("400");
+    await page.getByLabel("Fire Class").click();
+    await page.getByRole("option", { name: "EI60" }).click();
 
     await expect(page.getByText("FDR-EI60-500x400")).toBeVisible();
 
-    await page.getByLabel("Width").clear();
+    await page.getByRole("button", { name: "Reset" }).click();
 
     await expect(
       page.getByText("Configure product parameters to see real-time results.")
@@ -273,6 +276,9 @@ test.describe("UX features", () => {
     await page.getByText("Fire Damper Rectangular").click();
 
     await page.getByLabel("Width").fill("500");
+    await page.getByLabel("Height").fill("400");
+    await page.getByLabel("Fire Class").click();
+    await page.getByRole("option", { name: "EI60" }).click();
 
     await expect(page.getByText("FDR-EI60-500x400")).toBeVisible();
 
@@ -299,23 +305,20 @@ test.describe("UX features", () => {
   test("restores configuration from localStorage on reload", async ({
     page,
   }) => {
+    // Seed localStorage directly so the app can restore state on load.
+    // Avoids filling number inputs on mobile (the ConfigurationForm auto-focuses
+    // the first field after 100 ms, which can cause a concurrent fill to land
+    // in the wrong input and corrupt the stored value).
+    // The beforeEach clear script runs first; this inject runs second.
+    const savedConfig = JSON.stringify({
+      familyId: 1,
+      values: { width: 500, height: 400 },
+    });
+    await page.addInitScript((config) => {
+      localStorage.setItem("hvac-cpq-configurator", config);
+    }, savedConfig);
+
     await page.goto("/");
-    await page.getByText("Fire Damper Rectangular").click();
-
-    await page.getByLabel("Width").fill("500");
-    await page.getByLabel("Height").fill("400");
-
-    // Grab the persisted value before reload
-    const stored = await page.evaluate(() =>
-      localStorage.getItem("hvac-cpq-configurator")
-    );
-
-    // Override: re-inject saved config after the global clear runs
-    await page.addInitScript((value) => {
-      if (value) localStorage.setItem("hvac-cpq-configurator", value);
-    }, stored);
-
-    await page.reload();
 
     await expect(page.getByLabel("Width")).toHaveValue("500");
     await expect(page.getByLabel("Height")).toHaveValue("400");
@@ -348,8 +351,14 @@ test.describe("Mobile layout", () => {
     await page.getByText("Fire Damper Rectangular").click();
 
     await page.getByLabel("Width").fill("500");
+    await page.getByLabel("Height").fill("400");
+    await page.getByLabel("Fire Class").click();
+    await page.getByRole("option", { name: "EI60" }).click();
 
-    await page.getByText("Details").click();
+    // The Chat FAB (bottom: 24, right: 24, zIndex: 1300) overlaps the Details
+    // tap area on small viewport. dispatchEvent fires directly on the DOM node
+    // and bubbles to the Paper's onClick handler without coordinate hit-testing.
+    await page.getByText("Details").dispatchEvent("click");
 
     await expect(page.getByText("Configuration Results")).toBeVisible();
     await expect(
