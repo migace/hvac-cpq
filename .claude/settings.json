@@ -7,7 +7,18 @@
       "Bash(npm --version)",
       "Bash(npm create:*)",
       "Bash(npm install:*)",
-      "Bash(npx turbo:*)"
+      "Bash(npx turbo:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx vite:*)",
+      "Bash(curl -s http://localhost:3012/)",
+      "Bash(curl -s http://localhost:8000/health)",
+      "Bash(curl -s http://localhost:8000/product-families)",
+      "Bash(python3 -m json.tool)",
+      "Bash(curl -s http://localhost:3012/api/product-families)",
+      "Bash(curl -s -X POST http://localhost:3012/api/product-configurations/calculate-price -H 'Content-Type: application/json' -d '{\"product_family_id\": 1, \"name\": \"test\", \"status\": \"draft\", \"values\": [{\"attribute_code\": \"width\", \"value\": 500}, {\"attribute_code\": \"fire_class\", \"value\": \"EI120\"}]}')",
+      "Bash(curl -s -X POST http://localhost:3012/api/product-configurations/generate-order-code -H 'Content-Type: application/json' -d '{\"product_family_id\": 1, \"name\": \"test\", \"status\": \"draft\", \"values\": [{\"attribute_code\": \"width\", \"value\": 500}, {\"attribute_code\": \"fire_class\", \"value\": \"EI120\"}]}')",
+      "Bash(curl -s -X POST http://localhost:3012/api/product-configurations/calculate-technical -H 'Content-Type: application/json' -d '{\"product_family_id\": 1, \"name\": \"test\", \"status\": \"draft\", \"values\": [{\"attribute_code\": \"width\", \"value\": 500}, {\"attribute_code\": \"fire_class\", \"value\": \"EI120\"}]}')",
+      "Bash(python3 -c \"import sys,json; data=json.load\\(sys.stdin\\); print\\(f'{len\\(data\\)} families loaded'\\)\")"
     ]
   }
 }

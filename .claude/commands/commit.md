@@ -17,8 +17,6 @@ type: concise description of what changed and why
 
 Optional body with more details if the change is non-trivial.
 Explain motivation, not mechanics.
-
-Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
 ```
 
 ## Commit style rules (derived from this repo)
@@ -27,7 +25,6 @@ Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
 - Subject line: lowercase, no period, imperative mood, under 72 characters
 - If changes span multiple areas, mention the most important one in the subject
 - Body is optional — use it only when the subject alone is insufficient
-- Always include the `Co-Authored-By` trailer
 
 ## Important
 
