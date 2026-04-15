@@ -2,8 +2,6 @@ from decimal import Decimal
 
 from pydantic import BaseModel
 
-from app.schemas.product_configuration import ProductConfigurationCreate
-
 
 class PriceBreakdownItemRead(BaseModel):
     rule_name: str

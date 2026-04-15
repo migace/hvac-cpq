@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
-from app.db.models import ProductPricingRuleModel, PricingRuleType, RuleOperator
+from app.db.models import PricingRuleType, ProductPricingRuleModel, RuleOperator
 from app.domain.exceptions import CurrencyMismatchError, RuleEvaluationError
 
 
@@ -30,14 +30,18 @@ class PricingEngine:
     ) -> PricingResult:
         active_rules = [rule for rule in pricing_rules if rule.is_active]
 
-        base_rules = [rule for rule in active_rules if rule.pricing_rule_type == PricingRuleType.BASE_PRICE]
+        base_rules = [
+            rule for rule in active_rules
+            if rule.pricing_rule_type == PricingRuleType.BASE_PRICE
+        ]
         if len(base_rules) != 1:
             raise RuleEvaluationError("Exactly one active base_price rule is required.")
 
         currencies = {rule.currency for rule in active_rules}
         if len(currencies) > 1:
+            currencies_str = ", ".join(sorted(currencies))
             raise CurrencyMismatchError(
-                f"All active pricing rules must use the same currency, found: {', '.join(sorted(currencies))}."
+                f"All active pricing rules must use the same currency, found: {currencies_str}."
             )
 
         base_rule = base_rules[0]
@@ -61,7 +65,7 @@ class PricingEngine:
                 continue
 
             if not self._condition_matches(
-                actual_value=configuration_values.get(rule.if_attribute_code),
+                actual_value=configuration_values.get(rule.if_attribute_code or ""),
                 operator=rule.operator,
                 expected_value=rule.expected_value,
             ):
@@ -70,14 +74,22 @@ class PricingEngine:
             if rule.pricing_rule_type == PricingRuleType.FIXED_SURCHARGE:
                 surcharge_amount = Decimal(str(rule.amount))
                 if surcharge_amount < 0:
-                    raise RuleEvaluationError(f"Fixed surcharge cannot be negative, got: {surcharge_amount}")
+                    raise RuleEvaluationError(
+                        f"Fixed surcharge cannot be negative, got: {surcharge_amount}"
+                    )
             elif rule.pricing_rule_type == PricingRuleType.PERCENTAGE_SURCHARGE:
                 percentage = Decimal(str(rule.amount))
                 if percentage < -100:
-                    raise RuleEvaluationError(f"Percentage surcharge cannot be less than -100%, got: {percentage}")
-                surcharge_amount = (base_price * percentage / Decimal("100")).quantize(Decimal("0.01"))
+                    raise RuleEvaluationError(
+                        f"Percentage surcharge cannot be less than -100%, got: {percentage}"
+                    )
+                surcharge_amount = (
+                    base_price * percentage / Decimal("100")
+                ).quantize(Decimal("0.01"))
             else:
-                raise RuleEvaluationError(f"Unsupported pricing rule type: {rule.pricing_rule_type}")
+                raise RuleEvaluationError(
+                    f"Unsupported pricing rule type: {rule.pricing_rule_type}"
+                )
 
             surcharge_total += surcharge_amount
             breakdown.append(

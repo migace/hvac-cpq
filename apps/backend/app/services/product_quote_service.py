@@ -5,20 +5,19 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from app.core.db_utils import commit_and_refresh
 from app.db.models import (
     ProductConfigurationModel,
     ProductQuoteModel,
     QuoteStatus,
 )
 from app.domain.exceptions import ProductConfigurationNotFoundError, ProductQuoteNotFoundError
-from app.services.pricing_engine import PricingResult
-from app.services.product_configuration_service import ProductConfigurationService
-from app.services.quote_number_service import QuoteNumberService
-
-from app.core.db_utils import commit_and_refresh
 from app.repositories.product_configuration_repository import ProductConfigurationRepository
 from app.repositories.product_quote_repository import ProductQuoteRepository
 from app.services.order_code_service import OrderCodeService
+from app.services.pricing_engine import PricingResult
+from app.services.product_configuration_service import ProductConfigurationService
+from app.services.quote_number_service import QuoteNumberService
 
 
 class ProductQuoteService:
@@ -66,7 +65,9 @@ class ProductQuoteService:
     def list_quotes(self) -> list[ProductQuoteModel]:
         return self.quote_repository.list_all()
 
-    def _build_configuration_snapshot(self, configuration: ProductConfigurationModel) -> dict[str, Any]:
+    def _build_configuration_snapshot(
+        self, configuration: ProductConfigurationModel,
+    ) -> dict[str, Any]:
         family = configuration.product_family
         values_list = [
             {

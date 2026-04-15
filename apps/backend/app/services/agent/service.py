@@ -136,7 +136,7 @@ class AgentService:
             for _iteration in range(MAX_TOOL_ITERATIONS):
                 metrics.llm_calls += 1
 
-                stream = self.client.chat.completions.create(
+                stream = self.client.chat.completions.create(  # type: ignore[call-overload]
                     model=self.model,
                     messages=full_messages,
                     tools=TOOL_DEFINITIONS,
@@ -312,7 +312,7 @@ class AgentService:
             return {"error": f"Unknown tool: {name}"}
 
         try:
-            return handler(**arguments)
+            return handler(**arguments)  # type: ignore[operator]
         except Exception as exc:
             logger.warning("agent_tool_error", tool=name, error=str(exc))
             return {"error": str(exc)}

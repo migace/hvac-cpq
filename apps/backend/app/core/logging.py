@@ -27,7 +27,7 @@ def configure_logging() -> None:
 
     structlog.configure(
         processors=[
-            *shared_processors,
+            *shared_processors,  # type: ignore[list-item]
             structlog.processors.JSONRenderer(),
         ],
         wrapper_class=structlog.stdlib.BoundLogger,

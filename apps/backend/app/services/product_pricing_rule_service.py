@@ -1,5 +1,5 @@
 from app.core.db_utils import commit_and_refresh
-from app.db.models import ProductPricingRuleModel, PricingRuleType, RuleOperator
+from app.db.models import PricingRuleType, ProductPricingRuleModel, RuleOperator
 from app.domain.exceptions import (
     CurrencyMismatchError,
     ProductFamilyNotFoundError,
@@ -27,7 +27,8 @@ class ProductPricingRuleService:
             available_codes = {attribute.code for attribute in family.attributes}
             if payload.if_attribute_code not in available_codes:
                 raise ProductRuleDefinitionError(
-                    f"Attribute '{payload.if_attribute_code}' does not exist in family '{family.code}'."
+                    f"Attribute '{payload.if_attribute_code}' does not exist "
+                    f"in family '{family.code}'."
                 )
 
         existing_currencies = {

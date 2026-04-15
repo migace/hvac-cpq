@@ -1,12 +1,12 @@
 from decimal import Decimal
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, Field, model_validator
 
 from app.schemas.product_rule import RuleOperatorEnum
 
 
-class PricingRuleTypeEnum(str, Enum):
+class PricingRuleTypeEnum(StrEnum):
     BASE_PRICE = "base_price"
     FIXED_SURCHARGE = "fixed_surcharge"
     PERCENTAGE_SURCHARGE = "percentage_surcharge"
@@ -33,7 +33,10 @@ class ProductPricingRuleCreate(BaseModel):
                 raise ValueError("base_price rule cannot define condition fields.")
         else:
             if not self.if_attribute_code or not self.operator or self.expected_value is None:
-                raise ValueError("Conditional pricing rules require if_attribute_code, operator and expected_value.")
+                raise ValueError(
+                    "Conditional pricing rules require "
+                    "if_attribute_code, operator and expected_value."
+                )
 
         return self
 

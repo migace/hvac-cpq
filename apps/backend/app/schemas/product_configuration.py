@@ -18,7 +18,7 @@ class ProductConfigurationCreate(BaseModel):
     values: list[AttributeValueCreate] = Field(default_factory=list)
 
     @model_validator(mode="after")
-    def ensure_unique_attribute_codes(self) -> "ProductConfigurationCreate":
+    def ensure_unique_attribute_codes(self) -> ProductConfigurationCreate:
         codes = [item.attribute_code for item in self.values]
         if len(codes) != len(set(codes)):
             raise ValueError("Duplicate attribute codes are not allowed in a configuration.")

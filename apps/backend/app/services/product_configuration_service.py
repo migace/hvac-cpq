@@ -18,13 +18,12 @@ from app.domain.exceptions import (
     ProductConfigurationNotFoundError,
     ProductFamilyNotFoundError,
 )
-from app.schemas.product_configuration import ProductConfigurationCreate
-from app.services.configuration_validator import ConfigurationValidator
-from app.services.rule_engine import RuleEngine
-from app.services.pricing_engine import PricingEngine, PricingResult
-
 from app.repositories.product_configuration_repository import ProductConfigurationRepository
 from app.repositories.product_family_repository import ProductFamilyRepository
+from app.schemas.product_configuration import ProductConfigurationCreate
+from app.services.configuration_validator import ConfigurationValidator
+from app.services.pricing_engine import PricingEngine, PricingResult
+from app.services.rule_engine import RuleEngine
 
 
 class ProductConfigurationService:
@@ -36,7 +35,10 @@ class ProductConfigurationService:
         self.family_repository = ProductFamilyRepository(session)
         self.configuration_repository = ProductConfigurationRepository(session)
 
-    def create_configuration(self, payload: ProductConfigurationCreate) -> ProductConfigurationModel:
+    def create_configuration(
+        self,
+        payload: ProductConfigurationCreate,
+    ) -> ProductConfigurationModel:
         family = self.family_repository.get_by_id(payload.product_family_id)
         if not family:
             raise ProductFamilyNotFoundError(
@@ -85,7 +87,9 @@ class ProductConfigurationService:
         self.configuration_repository.add(configuration)
         self.session.commit()
 
-        return self.configuration_repository.get_by_id(configuration.id)
+        result = self.configuration_repository.get_by_id(configuration.id)
+        assert result is not None  # we just created and committed it
+        return result
 
     def list_configurations(self) -> list[ProductConfigurationModel]:
         return self.configuration_repository.list_all()
@@ -139,14 +143,17 @@ class ProductConfigurationService:
                     f"Attribute '{attribute_definition.code}' expects an integer."
                 )
 
-            if attribute_definition.min_int is not None and raw_value < attribute_definition.min_int:
+            code = attribute_definition.code
+            min_val = attribute_definition.min_int
+            max_val = attribute_definition.max_int
+            if min_val is not None and raw_value < min_val:
                 raise InvalidAttributeValueError(
-                    f"Attribute '{attribute_definition.code}' must be >= {attribute_definition.min_int}."
+                    f"Attribute '{code}' must be >= {min_val}."
                 )
 
-            if attribute_definition.max_int is not None and raw_value > attribute_definition.max_int:
+            if max_val is not None and raw_value > max_val:
                 raise InvalidAttributeValueError(
-                    f"Attribute '{attribute_definition.code}' must be <= {attribute_definition.max_int}."
+                    f"Attribute '{code}' must be <= {max_val}."
                 )
 
             return raw_value, AttributeValueModel(
@@ -227,7 +234,9 @@ class ProductConfigurationService:
             configuration_values=configuration_values,
         )
 
-    def build_configuration_values_map(self, payload: ProductConfigurationCreate) -> tuple[ProductFamilyModel, dict[str, Any]]:
+    def build_configuration_values_map(
+        self, payload: ProductConfigurationCreate,
+    ) -> tuple[ProductFamilyModel, dict[str, Any]]:
         family = self.family_repository.get_by_id(payload.product_family_id)
         if not family:
             raise ProductFamilyNotFoundError(

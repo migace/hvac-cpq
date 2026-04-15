@@ -1,24 +1,22 @@
-from contextlib import asynccontextmanager
 import os
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.routes.agent import router as agent_router
 from app.api.routes.health import router as health_router
-from app.api.routes.product_families import router as product_families_router
 from app.api.routes.product_configurations import router as product_configurations_router
-from app.api.routes.product_rules import router as product_rules_router
+from app.api.routes.product_families import router as product_families_router
 from app.api.routes.product_pricing_rules import router as product_pricing_rules_router
 from app.api.routes.product_quotes import router as product_quotes_router
-from app.api.routes.agent import router as agent_router
-
+from app.api.routes.product_rules import router as product_rules_router
 from app.core.config import get_settings
 from app.core.exceptions import register_exception_handlers
-from app.core.logging import get_logger, configure_logging
-from app.observability.tracing import configure_tracing
-
 from app.core.http_logging import HttpLoggingMiddleware
+from app.core.logging import configure_logging, get_logger
 from app.core.request_context import RequestContextMiddleware
+from app.observability.tracing import configure_tracing
 
 configure_logging()
 logger = get_logger()

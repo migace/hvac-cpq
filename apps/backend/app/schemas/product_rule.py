@@ -1,15 +1,15 @@
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, Field, model_validator
 
 
-class RuleTypeEnum(str, Enum):
+class RuleTypeEnum(StrEnum):
     REQUIRES_ATTRIBUTE = "requires_attribute"
     FORBIDS_ATTRIBUTE = "forbids_attribute"
     RESTRICTS_VALUE = "restricts_value"
 
 
-class RuleOperatorEnum(str, Enum):
+class RuleOperatorEnum(StrEnum):
     EQ = "eq"
     NEQ = "neq"
     GT = "gt"

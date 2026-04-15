@@ -2,20 +2,18 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_db_session
+from app.schemas.order_code import OrderCodeResponse
+from app.schemas.pricing import PriceBreakdownItemRead, PricingResponse
 from app.schemas.product_configuration import (
     AttributeValueRead,
     ProductConfigurationCreate,
     ProductConfigurationListItem,
     ProductConfigurationRead,
 )
-from app.services.product_configuration_service import ProductConfigurationService
-from app.schemas.pricing import PricingResponse, PriceBreakdownItemRead
-
 from app.schemas.technical_calculation import TechnicalCalculationResponse
-from app.services.technical_calculation_service import TechnicalCalculationService
-
-from app.schemas.order_code import OrderCodeResponse
 from app.services.order_code_service import OrderCodeService
+from app.services.product_configuration_service import ProductConfigurationService
+from app.services.technical_calculation_service import TechnicalCalculationService
 
 router = APIRouter(prefix="/product-configurations", tags=["product-configurations"])
 

@@ -1,4 +1,4 @@
-from app.db.models import AttributeDefinitionModel, ProductFamilyModel
+from app.db.models import ProductFamilyModel
 from app.domain.exceptions import EmptyConfigurationError, MissingRequiredAttributesError
 
 
@@ -9,7 +9,9 @@ class ConfigurationValidator:
         provided_attribute_codes: set[str],
     ) -> None:
         if not provided_attribute_codes:
-            raise EmptyConfigurationError("Configuration must contain at least one attribute value.")
+            raise EmptyConfigurationError(
+                "Configuration must contain at least one attribute value."
+            )
 
         required_attributes = {
             attribute.code

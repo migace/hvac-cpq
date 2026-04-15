@@ -17,11 +17,11 @@ from sqlalchemy.orm import Session
 
 from app.db.models import ProductFamilyModel
 from app.repositories.product_family_repository import ProductFamilyRepository
-from app.services.pricing_engine import PricingEngine
-from app.services.order_code_service import OrderCodeService
-from app.services.technical_calculation_service import TechnicalCalculationService
 from app.services.configuration_validator import ConfigurationValidator
+from app.services.order_code_service import OrderCodeService
+from app.services.pricing_engine import PricingEngine
 from app.services.rule_engine import RuleEngine
+from app.services.technical_calculation_service import TechnicalCalculationService
 
 
 def _decimal_to_str(value: Any) -> Any:
@@ -44,8 +44,14 @@ def _serialize_family(family: ProductFamilyModel, *, include_rules: bool = False
                 "type": attr.attribute_type.value,
                 "is_required": attr.is_required,
                 "unit": attr.unit,
-                "min": attr.min_int if attr.min_int is not None else _decimal_to_str(attr.min_decimal),
-                "max": attr.max_int if attr.max_int is not None else _decimal_to_str(attr.max_decimal),
+                "min": (
+                    attr.min_int if attr.min_int is not None
+                    else _decimal_to_str(attr.min_decimal)
+                ),
+                "max": (
+                    attr.max_int if attr.max_int is not None
+                    else _decimal_to_str(attr.max_decimal)
+                ),
                 "options": [
                     {"value": opt.value, "label": opt.label}
                     for opt in sorted(attr.enum_options, key=lambda o: o.sort_order)
@@ -63,7 +69,9 @@ def _serialize_family(family: ProductFamilyModel, *, include_rules: bool = False
                 "name": rule.name,
                 "description": rule.error_message,
                 "type": rule.rule_type.value,
-                "condition": f"{rule.if_attribute_code} {rule.operator.value} {rule.expected_value}",
+                "condition": (
+                    f"{rule.if_attribute_code} {rule.operator.value} {rule.expected_value}"
+                ),
                 "target": rule.target_attribute_code,
             }
             for rule in family.rules
@@ -78,7 +86,7 @@ def _serialize_family(family: ProductFamilyModel, *, include_rules: bool = False
                 "label": rule.label,
                 "condition": (
                     f"{rule.if_attribute_code} {rule.operator.value} {rule.expected_value}"
-                    if rule.if_attribute_code
+                    if rule.if_attribute_code and rule.operator
                     else None
                 ),
             }

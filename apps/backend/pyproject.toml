@@ -36,9 +36,11 @@ testpaths = ["tests"]
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+extend-exclude = ["alembic"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "N"]
+ignore = ["B008"]  # FastAPI Depends() in function defaults is intentional
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]
@@ -51,3 +53,4 @@ exclude = ["alembic*"]
 [tool.mypy]
 python_version = "3.12"
 ignore_missing_imports = true
+explicit_package_bases = true

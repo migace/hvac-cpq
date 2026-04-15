@@ -53,14 +53,14 @@ class TestAgentChatEndpoint:
 
         async def fake_stream(**kwargs):
             yield 'data: {"type": "delta", "content": "Hello!"}\n\n'
-            yield 'data: {"type": "done", "metrics": {"model": "test", "input_tokens": 10, "output_tokens": 5, "total_tokens": 15, "llm_calls": 1, "tool_calls_count": 0, "tools_used": [], "total_duration_ms": 100, "estimated_cost_usd": 0.0001}}\n\n'
+            yield 'data: {"type": "done", "metrics": {"model": "test", "input_tokens": 10, "output_tokens": 5, "total_tokens": 15, "llm_calls": 1, "tool_calls_count": 0, "tools_used": [], "total_duration_ms": 100, "estimated_cost_usd": 0.0001}}\n\n'  # noqa: E501
 
         fake_settings = MagicMock()
         fake_settings.openai_api_key = "test-key"
 
         with (
             patch("app.api.routes.agent.get_settings", return_value=fake_settings),
-            patch("app.api.routes.agent.AgentService") as MockService,
+            patch("app.api.routes.agent.AgentService") as MockService,  # noqa: N806
         ):
             instance = MockService.return_value
             instance.chat_stream = fake_stream
@@ -95,7 +95,7 @@ class TestAgentChatEndpoint:
 
         with (
             patch("app.api.routes.agent.get_settings", return_value=fake_settings),
-            patch("app.api.routes.agent.AgentService") as MockService,
+            patch("app.api.routes.agent.AgentService") as MockService,  # noqa: N806
         ):
             instance = MockService.return_value
             instance.chat_stream = fake_stream
@@ -119,7 +119,7 @@ class TestAgentChatEndpoint:
 
         with (
             patch("app.api.routes.agent.get_settings", return_value=fake_settings),
-            patch("app.api.routes.agent.AgentService") as MockService,
+            patch("app.api.routes.agent.AgentService") as MockService,  # noqa: N806
         ):
             instance = MockService.return_value
             instance.chat_stream = fake_stream

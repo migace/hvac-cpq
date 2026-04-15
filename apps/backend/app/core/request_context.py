@@ -1,9 +1,8 @@
 from uuid import uuid4
 
+import structlog
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
-
-import structlog
 
 
 class RequestContextMiddleware(BaseHTTPMiddleware):

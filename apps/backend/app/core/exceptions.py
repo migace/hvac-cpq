@@ -1,9 +1,10 @@
+from collections.abc import Sequence
+from typing import Any
+
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-
-from typing import Any
 
 from app.core.error_response import build_error_response
 from app.core.logging import get_logger
@@ -24,7 +25,7 @@ from app.domain.exceptions import (
 logger = get_logger()
 
 
-def _serialize_validation_errors(errors: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _serialize_validation_errors(errors: Sequence[Any]) -> list[dict[str, Any]]:
     serialized_errors: list[dict[str, Any]] = []
 
     for error in errors:

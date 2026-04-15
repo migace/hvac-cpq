@@ -2,28 +2,30 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     DateTime,
-    Enum as SqlEnum,
     ForeignKey,
     Integer,
-    JSON,
     Numeric,
     String,
     Text,
     UniqueConstraint,
     func,
 )
+from sqlalchemy import (
+    Enum as SqlEnum,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 
 
-class AttributeType(str, Enum):
+class AttributeType(StrEnum):
     STRING = "string"
     INTEGER = "integer"
     DECIMAL = "decimal"
@@ -31,7 +33,7 @@ class AttributeType(str, Enum):
     ENUM = "enum"
 
 
-class ConfigurationStatus(str, Enum):
+class ConfigurationStatus(StrEnum):
     DRAFT = "draft"
     ACTIVE = "active"
     ARCHIVED = "archived"
@@ -53,21 +55,21 @@ class ProductFamilyModel(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
 
-    attributes: Mapped[list["AttributeDefinitionModel"]] = relationship(
+    attributes: Mapped[list[AttributeDefinitionModel]] = relationship(
         back_populates="product_family",
         cascade="all, delete-orphan",
     )
-    configurations: Mapped[list["ProductConfigurationModel"]] = relationship(
-        back_populates="product_family",
-        cascade="all, delete-orphan",
-    )
-
-    rules: Mapped[list["ProductRuleModel"]] = relationship(
+    configurations: Mapped[list[ProductConfigurationModel]] = relationship(
         back_populates="product_family",
         cascade="all, delete-orphan",
     )
 
-    pricing_rules: Mapped[list["ProductPricingRuleModel"]] = relationship(
+    rules: Mapped[list[ProductRuleModel]] = relationship(
+        back_populates="product_family",
+        cascade="all, delete-orphan",
+    )
+
+    pricing_rules: Mapped[list[ProductPricingRuleModel]] = relationship(
         back_populates="product_family",
         cascade="all, delete-orphan",
     )
@@ -111,12 +113,12 @@ class AttributeDefinitionModel(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
 
-    product_family: Mapped["ProductFamilyModel"] = relationship(back_populates="attributes")
-    enum_options: Mapped[list["AttributeOptionModel"]] = relationship(
+    product_family: Mapped[ProductFamilyModel] = relationship(back_populates="attributes")
+    enum_options: Mapped[list[AttributeOptionModel]] = relationship(
         back_populates="attribute_definition",
         cascade="all, delete-orphan",
     )
-    values: Mapped[list["AttributeValueModel"]] = relationship(back_populates="attribute_definition")
+    values: Mapped[list[AttributeValueModel]] = relationship(back_populates="attribute_definition")
 
 
 class AttributeOptionModel(Base):
@@ -136,7 +138,7 @@ class AttributeOptionModel(Base):
     label: Mapped[str] = mapped_column(String(255), nullable=False)
     sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
-    attribute_definition: Mapped["AttributeDefinitionModel"] = relationship(
+    attribute_definition: Mapped[AttributeDefinitionModel] = relationship(
         back_populates="enum_options"
     )
 
@@ -168,12 +170,12 @@ class ProductConfigurationModel(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
 
-    product_family: Mapped["ProductFamilyModel"] = relationship(back_populates="configurations")
-    values: Mapped[list["AttributeValueModel"]] = relationship(
+    product_family: Mapped[ProductFamilyModel] = relationship(back_populates="configurations")
+    values: Mapped[list[AttributeValueModel]] = relationship(
         back_populates="configuration",
         cascade="all, delete-orphan",
     )
-    quotes: Mapped[list["ProductQuoteModel"]] = relationship(
+    quotes: Mapped[list[ProductQuoteModel]] = relationship(
         back_populates="configuration",
         cascade="all, delete-orphan",
     )
@@ -213,8 +215,8 @@ class AttributeValueModel(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
 
-    configuration: Mapped["ProductConfigurationModel"] = relationship(back_populates="values")
-    attribute_definition: Mapped["AttributeDefinitionModel"] = relationship(back_populates="values")
+    configuration: Mapped[ProductConfigurationModel] = relationship(back_populates="values")
+    attribute_definition: Mapped[AttributeDefinitionModel] = relationship(back_populates="values")
 
     @property
     def resolved_value(self) -> Any:
@@ -227,13 +229,13 @@ class AttributeValueModel(Base):
         return self.value_string
 
 
-class RuleType(str, Enum):
+class RuleType(StrEnum):
     REQUIRES_ATTRIBUTE = "requires_attribute"
     FORBIDS_ATTRIBUTE = "forbids_attribute"
     RESTRICTS_VALUE = "restricts_value"
 
 
-class RuleOperator(str, Enum):
+class RuleOperator(StrEnum):
     EQ = "eq"
     NEQ = "neq"
     GT = "gt"
@@ -284,10 +286,10 @@ class ProductRuleModel(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
 
-    product_family: Mapped["ProductFamilyModel"] = relationship(back_populates="rules")
+    product_family: Mapped[ProductFamilyModel] = relationship(back_populates="rules")
 
 
-class PricingRuleType(str, Enum):
+class PricingRuleType(StrEnum):
     BASE_PRICE = "base_price"
     FIXED_SURCHARGE = "fixed_surcharge"
     PERCENTAGE_SURCHARGE = "percentage_surcharge"
@@ -329,10 +331,10 @@ class ProductPricingRuleModel(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
 
-    product_family: Mapped["ProductFamilyModel"] = relationship(back_populates="pricing_rules")
+    product_family: Mapped[ProductFamilyModel] = relationship(back_populates="pricing_rules")
 
 
-class QuoteStatus(str, Enum):
+class QuoteStatus(StrEnum):
     DRAFT = "draft"
     GENERATED = "generated"
     APPROVED = "approved"
@@ -371,4 +373,4 @@ class ProductQuoteModel(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
 
-    configuration: Mapped["ProductConfigurationModel"] = relationship(back_populates="quotes")
+    configuration: Mapped[ProductConfigurationModel] = relationship(back_populates="quotes")

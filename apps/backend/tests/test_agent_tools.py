@@ -6,7 +6,6 @@ from sqlalchemy.orm import Session
 
 from app.services.agent.tools import AgentTools
 
-
 # ── Helpers ──────────────────────────────────────────────────────────
 
 def _seed_family_with_rules(client: TestClient) -> int:
@@ -150,7 +149,9 @@ class TestSearchProducts:
         codes = {f["code"] for f in result["families"]}
         assert codes == {"fire_damper_rectangular", "fire_damper_round"}
 
-    def test_search_filters_by_shape_rectangular(self, client: TestClient, db_session: Session) -> None:
+    def test_search_filters_by_shape_rectangular(
+        self, client: TestClient, db_session: Session,
+    ) -> None:
         _seed_family_with_rules(client)
         _seed_round_family(client)
 
@@ -176,7 +177,9 @@ class TestSearchProducts:
         assert result["total"] == 1
         assert result["families"][0]["code"] == "fire_damper_rectangular"
 
-    def test_search_returns_empty_for_no_match(self, client: TestClient, db_session: Session) -> None:
+    def test_search_returns_empty_for_no_match(
+        self, client: TestClient, db_session: Session,
+    ) -> None:
         _seed_family_with_rules(client)
 
         tools = AgentTools(db_session)
@@ -270,7 +273,9 @@ class TestValidateConfiguration:
         )
         assert result["valid"] is True
 
-    def test_invalid_configuration_missing_required(self, client: TestClient, db_session: Session) -> None:
+    def test_invalid_configuration_missing_required(
+        self, client: TestClient, db_session: Session,
+    ) -> None:
         family_id = _seed_family_with_rules(client)
 
         tools = AgentTools(db_session)
@@ -281,7 +286,9 @@ class TestValidateConfiguration:
         assert result["valid"] is False
         assert "missing" in result["message"].lower() or "required" in result["message"].lower()
 
-    def test_invalid_configuration_rule_violation(self, client: TestClient, db_session: Session) -> None:
+    def test_invalid_configuration_rule_violation(
+        self, client: TestClient, db_session: Session,
+    ) -> None:
         family_id = _seed_family_with_rules(client)
 
         tools = AgentTools(db_session)
@@ -321,7 +328,9 @@ class TestGenerateOrderCode:
 # ── calculate_technical_params tool tests ────────────────────────────
 
 class TestCalculateTechnicalParams:
-    def test_calculates_effective_area_rectangular(self, client: TestClient, db_session: Session) -> None:
+    def test_calculates_effective_area_rectangular(
+        self, client: TestClient, db_session: Session,
+    ) -> None:
         family_id = _seed_family_with_rules(client)
 
         tools = AgentTools(db_session)

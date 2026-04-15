@@ -1,12 +1,12 @@
 from datetime import datetime
 from decimal import Decimal
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
-class QuoteStatusEnum(str, Enum):
+class QuoteStatusEnum(StrEnum):
     DRAFT = "draft"
     GENERATED = "generated"
     APPROVED = "approved"

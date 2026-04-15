@@ -11,7 +11,8 @@ TOOL_DEFINITIONS: list[dict] = [
             "name": "search_products",
             "description": (
                 "Search available HVAC product families. "
-                "Use this to find products matching user criteria like shape, fire class, or keywords. "
+                "Use this to find products matching user criteria like shape, "
+                "fire class, or keywords. "
                 "Returns a list of matching product families with their attributes."
             ),
             "parameters": {
@@ -19,7 +20,10 @@ TOOL_DEFINITIONS: list[dict] = [
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": "Free-text search query to match against product names and descriptions.",
+                        "description": (
+                            "Free-text search query to match against product "
+                            "names and descriptions."
+                        ),
                     },
                     "fire_class": {
                         "type": "string",
@@ -27,7 +31,9 @@ TOOL_DEFINITIONS: list[dict] = [
                     },
                     "shape": {
                         "type": "string",
-                        "description": "Product shape filter: 'rectangular', 'round', or 'multi_blade'.",
+                        "description": (
+                            "Product shape filter: 'rectangular', 'round', or 'multi_blade'."
+                        ),
                         "enum": ["rectangular", "round", "multi_blade"],
                     },
                 },
@@ -42,7 +48,8 @@ TOOL_DEFINITIONS: list[dict] = [
             "description": (
                 "Get full details of a specific product family including all attributes, "
                 "business validation rules, and pricing rules. "
-                "Use this after search_products to get complete information about a specific family."
+                "Use this after search_products to get complete information "
+                "about a specific family."
             ),
             "parameters": {
                 "type": "object",
@@ -63,7 +70,8 @@ TOOL_DEFINITIONS: list[dict] = [
             "name": "calculate_price",
             "description": (
                 "Calculate the price for a specific product configuration. "
-                "Requires a family ID and a configuration object mapping attribute codes to values. "
+                "Requires a family ID and a configuration object mapping attribute "
+                "codes to values. "
                 "Returns pricing breakdown with base price, surcharges, and total."
             ),
             "parameters": {
@@ -76,8 +84,8 @@ TOOL_DEFINITIONS: list[dict] = [
                     "configuration": {
                         "type": "object",
                         "description": (
-                            "Configuration values as key-value pairs where keys are attribute codes "
-                            "and values are the selected values. "
+                            "Configuration values as key-value pairs where keys "
+                            "are attribute codes and values are the selected values. "
                             "Example: {\"width\": 400, \"height\": 300, \"fire_class\": \"EI120\"}"
                         ),
                     },

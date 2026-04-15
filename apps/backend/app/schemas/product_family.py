@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from decimal import Decimal
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, Field, model_validator
 
 
-class AttributeTypeEnum(str, Enum):
+class AttributeTypeEnum(StrEnum):
     STRING = "string"
     INTEGER = "integer"
     DECIMAL = "decimal"
@@ -36,7 +36,7 @@ class AttributeDefinitionCreate(BaseModel):
     enum_options: list[AttributeOptionCreate] = Field(default_factory=list)
 
     @model_validator(mode="after")
-    def validate_attribute_constraints(self) -> "AttributeDefinitionCreate":
+    def validate_attribute_constraints(self) -> AttributeDefinitionCreate:
         if self.attribute_type == AttributeTypeEnum.INTEGER:
             if self.min_decimal is not None or self.max_decimal is not None:
                 raise ValueError("Decimal bounds are not allowed for integer attributes.")

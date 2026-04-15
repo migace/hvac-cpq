@@ -9,19 +9,18 @@ Each product family demonstrates different features:
 
 from decimal import Decimal
 
-from app.db.session import SessionLocal
 from app.db.models import (
     AttributeDefinitionModel,
     AttributeOptionModel,
     AttributeType,
+    PricingRuleType,
     ProductFamilyModel,
     ProductPricingRuleModel,
     ProductRuleModel,
-    PricingRuleType,
     RuleOperator,
     RuleType,
 )
-
+from app.db.session import SessionLocal
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -207,7 +206,10 @@ def seed_rectangular_fire_damper() -> ProductFamilyModel:
             expected_value="ceiling",
             target_attribute_code="actuator_type",
             allowed_values=["standard", "spring_return"],
-            error_message="Only standard and spring-return actuators are allowed for ceiling installation (reinforced is too heavy).",
+            error_message=(
+                "Only standard and spring-return actuators are allowed for ceiling "
+                "installation (reinforced is too heavy)."
+            ),
             is_active=True,
         ),
         # REQUIRES_ATTRIBUTE + GT: large dampers need actuator
@@ -329,7 +331,9 @@ def seed_round_fire_damper() -> ProductFamilyModel:
     add_enum_attribute(
         family, code="connection_type", name="Connection Type",
         options=["flange", "sleeve", "spigot"], is_required=False,
-        description="Duct connection method (flange for rigid, sleeve for flexible, spigot for push-fit)",
+        description=(
+            "Duct connection method (flange for rigid, sleeve for flexible, spigot for push-fit)"
+        ),
     )
     add_enum_attribute(
         family, code="installation_type", name="Installation Type",
@@ -359,7 +363,10 @@ def seed_round_fire_damper() -> ProductFamilyModel:
             operator=RuleOperator.GT,
             expected_value="600",
             target_attribute_code="connection_type",
-            error_message="Sleeve connection is not available for dampers with diameter above 600 mm. Use flange or spigot instead.",
+            error_message=(
+                "Sleeve connection is not available for dampers with diameter above 600 mm. "
+                "Use flange or spigot instead."
+            ),
             is_active=True,
         ),
         # RESTRICTS_VALUE + LT: small diameter limits actuator
@@ -524,7 +531,10 @@ def seed_multi_blade_fire_damper() -> ProductFamilyModel:
             operator=RuleOperator.EQ,
             expected_value="ceiling",
             target_attribute_code="motorized",
-            error_message="Motorized actuator is not available for ceiling installation due to weight constraints.",
+            error_message=(
+                "Motorized actuator is not available for ceiling installation "
+                "due to weight constraints."
+            ),
             is_active=True,
         ),
     ])
@@ -627,7 +637,10 @@ def main() -> None:
             attr_count = len(family.attributes)
             rule_count = len(family.rules)
             pricing_count = len(family.pricing_rules)
-            print(f"  SEED  {family.code} ({attr_count} attrs, {rule_count} rules, {pricing_count} pricing)")
+            print(
+                f"  SEED  {family.code} "
+                f"({attr_count} attrs, {rule_count} rules, {pricing_count} pricing)"
+            )
             seeded += 1
 
         session.commit()
