@@ -41,7 +41,11 @@ class PricingEngine:
             )
 
         base_rule = base_rules[0]
-        base_price = Decimal(base_rule.amount)
+        base_price = Decimal(str(base_rule.amount))
+
+        # Validate base price is non-negative
+        if base_price < 0:
+            raise RuleEvaluationError(f"Base price cannot be negative, got: {base_price}")
         breakdown = [
             PriceBreakdownItem(
                 rule_name=base_rule.name,
@@ -64,9 +68,14 @@ class PricingEngine:
                 continue
 
             if rule.pricing_rule_type == PricingRuleType.FIXED_SURCHARGE:
-                surcharge_amount = Decimal(rule.amount)
+                surcharge_amount = Decimal(str(rule.amount))
+                if surcharge_amount < 0:
+                    raise RuleEvaluationError(f"Fixed surcharge cannot be negative, got: {surcharge_amount}")
             elif rule.pricing_rule_type == PricingRuleType.PERCENTAGE_SURCHARGE:
-                surcharge_amount = (base_price * Decimal(rule.amount) / Decimal("100")).quantize(Decimal("0.01"))
+                percentage = Decimal(str(rule.amount))
+                if percentage < -100:
+                    raise RuleEvaluationError(f"Percentage surcharge cannot be less than -100%, got: {percentage}")
+                surcharge_amount = (base_price * percentage / Decimal("100")).quantize(Decimal("0.01"))
             else:
                 raise RuleEvaluationError(f"Unsupported pricing rule type: {rule.pricing_rule_type}")
 

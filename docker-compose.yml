@@ -2,15 +2,15 @@ services:
   db:
     image: postgres:16
     environment:
-      POSTGRES_DB: cpq_hvac
-      POSTGRES_USER: cpq
-      POSTGRES_PASSWORD: cpq
+      POSTGRES_DB: ${DB_NAME:-cpq_hvac}
+      POSTGRES_USER: ${DB_USER:-cpq}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}  # ⚠️ MUST be overridden in production
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U cpq -d cpq_hvac"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-cpq} -d ${DB_NAME:-cpq_hvac}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -18,16 +18,18 @@ services:
   api:
     build: ./apps/backend
     ports:
-      - "8000:8000"
+      - "${API_PORT:-8000}:8000"
     environment:
-      DATABASE_URL: postgresql+psycopg://cpq:cpq@db:5432/cpq_hvac
+      DATABASE_URL: postgresql+psycopg://${DB_USER:-cpq}:${DB_PASSWORD:-changeme}@db:5432/${DB_NAME:-cpq_hvac}
       APP_NAME: cpq-hvac
-      APP_ENV: local
-      APP_DEBUG: "true"
+      APP_ENV: ${APP_ENV:-local}
+      APP_DEBUG: ${APP_DEBUG:-false}  # ⚠️ Set to false in production
       APP_HOST: 0.0.0.0
       APP_PORT: "8000"
-      LOG_LEVEL: INFO
-      OTEL_ENABLED: "false"
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      OTEL_ENABLED: ${OTEL_ENABLED:-false}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:3012}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}  # Set in .env or via secrets manager
     depends_on:
       db:
         condition: service_healthy

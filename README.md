@@ -326,22 +326,39 @@ pip install -e .[dev]
 
 ### Environment
 
-Create `.env` based on `.env.example`.
+Create `.env` based on `.env.example`:
 
-Example:
+```bash
+cp apps/backend/.env.example apps/backend/.env
+```
+
+Then edit `apps/backend/.env` and set your variables (especially `OPENAI_API_KEY`):
 
 ```env
 APP_NAME=cpq-hvac
 APP_ENV=local
-APP_DEBUG=true
+APP_DEBUG=false
 APP_HOST=0.0.0.0
 APP_PORT=8000
 
-DATABASE_URL=postgresql+psycopg://cpq:cpq@localhost:5432/cpq_hvac
+# Database connection
+DATABASE_URL=postgresql+psycopg://cpq:your-password@localhost:5432/cpq_hvac
 
+# Logging
 LOG_LEVEL=INFO
 OTEL_ENABLED=false
+
+# CORS (browser cross-origin access)
+CORS_ORIGINS=http://localhost:3000,http://localhost:3012
+
+# AI Agent (required for chat feature)
+OPENAI_API_KEY=sk-proj-your-api-key-here
+OPENAI_MODEL=gpt-4-mini
 ```
+
+**Important:** Never commit `.env` with real secrets. The file is in `.gitignore` by default.
+
+For detailed secrets management, see [`docs/secrets-management.md`](docs/secrets-management.md).
 
 ### Run database migrations
 
@@ -365,13 +382,26 @@ http://localhost:8000/docs
 
 ## Docker setup
 
-Run the application and PostgreSQL with Docker Compose:
+1. **Create environment file** in project root:
+
+```bash
+cp .env.example .env
+nano .env  # Edit with your database password and OpenAI API key
+```
+
+2. **Start services** with Docker Compose:
 
 ```bash
 docker compose up --build
 ```
 
-Then run migrations inside the app container if needed.
+3. **Verify API is running**:
+
+```bash
+curl http://localhost:8000/health
+```
+
+For detailed Docker Compose setup and environment variables, see [`docs/environment-variables.md`](docs/environment-variables.md).
 
 ---
 

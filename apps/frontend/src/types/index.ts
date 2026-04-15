@@ -20,6 +20,17 @@ export interface AttributeDefinition {
   enum_options: AttributeOption[];
 }
 
+export interface ProductRule {
+  rule_type: "requires_attribute" | "forbids_attribute" | "restricts_value";
+  if_attribute_code: string;
+  operator: string;
+  expected_value: string;
+  target_attribute_code: string;
+  allowed_values: string[] | null;
+  error_message: string;
+  is_active: boolean;
+}
+
 export interface ProductFamily {
   id: number;
   code: string;
@@ -27,6 +38,7 @@ export interface ProductFamily {
   description: string | null;
   is_active: boolean;
   attributes: AttributeDefinition[];
+  rules: ProductRule[];
 }
 
 export interface AttributeValuePayload {

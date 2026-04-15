@@ -16,10 +16,25 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   });
 
   if (!response.ok) {
-    const body = await response.json().catch(() => ({
-      message: response.statusText,
-    }));
-    throw body.error ?? body;
+    // Parse error response safely — handle multiple error formats
+    let errorData: Record<string, unknown> = {};
+    try {
+      errorData = await response.json();
+    } catch {
+      // If response is not JSON, create a basic error object
+      errorData = {
+        message: response.statusText || `HTTP ${response.status}`,
+        code: `HTTP_${response.status}`,
+      };
+    }
+
+    // Throw a normalized error object
+    throw {
+      status: response.status,
+      message: (errorData.message as string) || response.statusText || "Unknown error",
+      code: (errorData.code as string) || `HTTP_${response.status}`,
+      details: errorData,
+    };
   }
 
   return response.json();

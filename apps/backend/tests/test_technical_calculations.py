@@ -3,8 +3,8 @@ from fastapi.testclient import TestClient
 
 def test_calculate_effective_area_for_rectangular_fire_damper(client: TestClient) -> None:
     family_payload = {
-        "code": "fire_damper",
-        "name": "Fire Damper",
+        "code": "fire_damper_rectangular",
+        "name": "Fire Damper Rectangular",
         "attributes": [
             {
                 "code": "fire_class",
@@ -58,7 +58,7 @@ def test_calculate_effective_area_for_rectangular_fire_damper(client: TestClient
     assert response.status_code == 200
     data = response.json()
 
-    assert data["family_code"] == "fire_damper"
+    assert data["family_code"] == "fire_damper_rectangular"
     assert len(data["results"]) == 1
     assert data["results"][0]["code"] == "effective_area"
     assert data["results"][0]["value"] == "0.9600"

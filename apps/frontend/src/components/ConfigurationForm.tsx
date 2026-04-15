@@ -14,6 +14,7 @@ interface ConfigurationFormProps {
   attributes: AttributeDefinition[];
   values: Record<string, string | number | boolean>;
   fieldErrors: Record<string, string>;
+  disabledFields?: Record<string, string>;
   onChange: (code: string, value: string | number | boolean) => void;
   onBlur: (code: string) => void;
 }
@@ -22,6 +23,7 @@ export default function ConfigurationForm({
   attributes,
   values,
   fieldErrors,
+  disabledFields = {},
   onChange,
   onBlur,
 }: ConfigurationFormProps) {
@@ -78,8 +80,10 @@ export default function ConfigurationForm({
             <AttributeField
               key={attr.code}
               attribute={attr}
-              value={values[attr.code]}
+              value={disabledFields[attr.code] ? undefined : values[attr.code]}
               error={fieldErrors[attr.code]}
+              disabled={!!disabledFields[attr.code]}
+              helperOverride={disabledFields[attr.code]}
               onChange={onChange}
               onBlur={onBlur}
             />
@@ -94,6 +98,8 @@ interface AttributeFieldProps {
   attribute: AttributeDefinition;
   value: string | number | boolean | undefined;
   error: string | undefined;
+  disabled?: boolean;
+  helperOverride?: string;
   onChange: (code: string, value: string | number | boolean) => void;
   onBlur: (code: string) => void;
   inputRef?: React.Ref<HTMLInputElement>;
@@ -103,6 +109,8 @@ function AttributeField({
   attribute,
   value,
   error,
+  disabled = false,
+  helperOverride,
   onChange,
   onBlur,
   inputRef,
@@ -110,7 +118,7 @@ function AttributeField({
   const { code, name, attribute_type, is_required, unit, enum_options } =
     attribute;
 
-  const hasError = !!error;
+  const hasError = !disabled && !!error;
 
   switch (attribute_type) {
     case "enum":
@@ -118,12 +126,13 @@ function AttributeField({
         <TextField
           select
           label={name}
-          value={value ?? ""}
+          value={disabled ? "" : (value ?? "")}
           onChange={(e) => onChange(code, e.target.value)}
           onBlur={() => onBlur(code)}
           required={is_required}
+          disabled={disabled}
           error={hasError}
-          helperText={error || attribute.description}
+          helperText={disabled ? helperOverride : (error || attribute.description)}
           fullWidth
           size="small"
           inputRef={inputRef}
@@ -146,15 +155,16 @@ function AttributeField({
         <TextField
           type="number"
           label={name}
-          value={value ?? ""}
+          value={disabled ? "" : (value ?? "")}
           onChange={(e) => {
             const v = e.target.value;
             onChange(code, v === "" ? "" : parseInt(v, 10));
           }}
           onBlur={() => onBlur(code)}
           required={is_required}
+          disabled={disabled}
           error={hasError}
-          helperText={error || buildRangeHint(attribute)}
+          helperText={disabled ? helperOverride : (error || buildRangeHint(attribute))}
           fullWidth
           size="small"
           inputRef={inputRef}
@@ -180,15 +190,16 @@ function AttributeField({
         <TextField
           type="number"
           label={name}
-          value={value ?? ""}
+          value={disabled ? "" : (value ?? "")}
           onChange={(e) => {
             const v = e.target.value;
             onChange(code, v === "" ? "" : parseFloat(v));
           }}
           onBlur={() => onBlur(code)}
           required={is_required}
+          disabled={disabled}
           error={hasError}
-          helperText={error || buildRangeHint(attribute)}
+          helperText={disabled ? helperOverride : (error || buildRangeHint(attribute))}
           fullWidth
           size="small"
           inputRef={inputRef}
@@ -215,13 +226,17 @@ function AttributeField({
           <FormControlLabel
             control={
               <Switch
-                checked={!!value}
+                checked={disabled ? false : !!value}
                 onChange={(e) => onChange(code, e.target.checked)}
                 onBlur={() => onBlur(code)}
+                disabled={disabled}
               />
             }
             label={name}
           />
+          {disabled && helperOverride && (
+            <FormHelperText>{helperOverride}</FormHelperText>
+          )}
           {hasError && (
             <FormHelperText error>{error}</FormHelperText>
           )}

@@ -99,6 +99,19 @@ class AttributeDefinitionRead(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class ProductRuleRead(BaseModel):
+    rule_type: str
+    if_attribute_code: str
+    operator: str
+    expected_value: str
+    target_attribute_code: str
+    allowed_values: list[str] | None = None
+    error_message: str
+    is_active: bool
+
+    model_config = {"from_attributes": True}
+
+
 class ProductFamilyRead(BaseModel):
     id: int
     code: str
@@ -106,5 +119,6 @@ class ProductFamilyRead(BaseModel):
     description: str | None
     is_active: bool
     attributes: list[AttributeDefinitionRead]
+    rules: list[ProductRuleRead] = Field(default_factory=list)
 
     model_config = {"from_attributes": True}

@@ -74,13 +74,16 @@ class RuleEngine:
             return
 
         if rule.rule_type == RuleType.FORBIDS_ATTRIBUTE:
-            if target_value is not None:
+            # For booleans, False means "not enabled" — treat as not set
+            if target_value is not None and target_value is not False:
                 raise RuleViolationError(rule.error_message)
             return
 
         if rule.rule_type == RuleType.RESTRICTS_VALUE:
+            if target_value is None:
+                return  # optional attribute not provided — nothing to restrict
             allowed_values = set(rule.allowed_values or [])
-            if target_value is None or str(target_value) not in allowed_values:
+            if str(target_value) not in allowed_values:
                 raise RuleViolationError(rule.error_message)
             return
 

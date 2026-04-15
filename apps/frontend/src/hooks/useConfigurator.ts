@@ -96,6 +96,8 @@ export function useConfigurator() {
   }, []);
 
   // --- Persist to localStorage on values/family change ---
+  // NOTE: Only persist non-sensitive configuration data (family + attribute values)
+  // Do NOT store pricing, quotes, or order codes as they may contain sensitive info
   useEffect(() => {
     if (state.selectedFamily) {
       const data: PersistedConfig = {
@@ -156,6 +158,34 @@ export function useConfigurator() {
     }));
   }, []);
 
+  // --- Evaluate rules to determine disabled fields ---
+  const disabledFields = useMemo((): Record<string, string> => {
+    if (!state.selectedFamily?.rules) return {};
+    const disabled: Record<string, string> = {};
+    for (const rule of state.selectedFamily.rules) {
+      if (!rule.is_active) continue;
+      if (rule.rule_type !== "forbids_attribute") continue;
+      const currentValue = state.values[rule.if_attribute_code];
+      if (currentValue === undefined || currentValue === "" || currentValue === null) continue;
+      // Check if the condition matches
+      const actual = String(currentValue);
+      const expected = rule.expected_value;
+      let matches = false;
+      switch (rule.operator) {
+        case "eq": matches = actual === expected; break;
+        case "neq": matches = actual !== expected; break;
+        case "gt": matches = Number(actual) > Number(expected); break;
+        case "gte": matches = Number(actual) >= Number(expected); break;
+        case "lt": matches = Number(actual) < Number(expected); break;
+        case "lte": matches = Number(actual) <= Number(expected); break;
+      }
+      if (matches) {
+        disabled[rule.target_attribute_code] = rule.error_message;
+      }
+    }
+    return disabled;
+  }, [state.selectedFamily, state.values]);
+
   // --- Client-side field validation ---
   const clientFieldErrors = useMemo(() => {
     if (!state.selectedFamily) return {};
@@ -194,10 +224,18 @@ export function useConfigurator() {
     if (!state.selectedFamily) return null;
 
     const filledValues = Object.entries(state.values)
-      .filter(([, v]) => v !== "" && v !== undefined && v !== null)
+      .filter(([code, v]) => v !== "" && v !== undefined && v !== null && v !== false && !(code in disabledFields))
       .map(([attribute_code, value]) => ({ attribute_code, value }));
 
     if (filledValues.length === 0) return null;
+
+    // Only send API request when all required attributes are filled
+    const requiredCodes = state.selectedFamily.attributes
+      .filter((a: AttributeDefinition) => a.is_required)
+      .map((a: AttributeDefinition) => a.code);
+    const filledCodes = new Set(filledValues.map((v) => v.attribute_code));
+    const allRequiredFilled = requiredCodes.every((code: string) => filledCodes.has(code));
+    if (!allRequiredFilled) return null;
 
     return {
       product_family_id: state.selectedFamily.id,
@@ -205,7 +243,7 @@ export function useConfigurator() {
       status: "draft",
       values: filledValues,
     };
-  }, [state.selectedFamily, state.values]);
+  }, [state.selectedFamily, state.values, disabledFields]);
 
   // --- Debounced API calls with AbortController ---
   useEffect(() => {
@@ -378,6 +416,7 @@ export function useConfigurator() {
     quote: state.quote,
     saving: state.saving,
     fieldErrors,
+    disabledFields,
     generalErrors,
     hasValues,
     canGenerateQuote,

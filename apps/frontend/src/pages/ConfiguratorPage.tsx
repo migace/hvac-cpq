@@ -28,6 +28,7 @@ export default function ConfiguratorPage() {
     calculating,
     fieldErrors,
     generalErrors,
+    disabledFields,
     hasValues,
     quote,
     saving,
@@ -120,6 +121,7 @@ export default function ConfiguratorPage() {
                     attributes={selectedFamily.attributes}
                     values={values}
                     fieldErrors={fieldErrors}
+                    disabledFields={disabledFields}
                     onChange={setValue}
                     onBlur={touchField}
                   />

@@ -1,6 +1,8 @@
 from contextlib import asynccontextmanager
+import os
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes.health import router as health_router
 from app.api.routes.product_families import router as product_families_router
@@ -25,10 +27,12 @@ settings = get_settings()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("application_starting", app_name=settings.app_name, env=settings.app_env)
+    logger.info("application_starting",
+                app_name=settings.app_name, env=settings.app_env)
     configure_tracing(app)
     yield
-    logger.info("application_stopping", app_name=settings.app_name, env=settings.app_env)
+    logger.info("application_stopping",
+                app_name=settings.app_name, env=settings.app_env)
 
 
 def create_app() -> FastAPI:
@@ -40,6 +44,19 @@ def create_app() -> FastAPI:
 
     app.add_middleware(RequestContextMiddleware)
     app.add_middleware(HttpLoggingMiddleware)
+
+    # CORS configuration — add last so it executes first in the middleware chain
+    # In production, restrict to specific domains
+    allowed_origins = os.getenv(
+        "CORS_ORIGINS", "http://localhost:3000"
+    ).split(",")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[origin.strip() for origin in allowed_origins],
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allow_headers=["*"],
+    )
 
     register_exception_handlers(app)
     app.include_router(health_router)

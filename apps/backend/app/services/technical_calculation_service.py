@@ -1,26 +1,31 @@
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Any
 
+from app.core.family_config import FAMILY_CALCULATION_TYPE
 from app.domain.exceptions import ConfigurationError
 from app.schemas.technical_calculation import TechnicalCalculationItem
 
 
 class TechnicalCalculationService:
+    _CALCULATORS: dict[str, str] = {
+        "rectangular": "_calculate_rectangular_fire_damper",
+        "round": "_calculate_round_fire_damper",
+    }
+
     def calculate(
         self,
         *,
         family_code: str,
         configuration_values: dict[str, Any],
     ) -> list[TechnicalCalculationItem]:
-        if family_code in {"fire_damper", "fire_damper_rectangular"}:
-            return self._calculate_rectangular_fire_damper(configuration_values)
+        calc_type = FAMILY_CALCULATION_TYPE.get(family_code)
+        if calc_type is None:
+            raise ConfigurationError(
+                f"Technical calculations are not implemented for family '{family_code}'."
+            )
 
-        if family_code == "fire_damper_round":
-            return self._calculate_round_fire_damper(configuration_values)
-
-        raise ConfigurationError(
-            f"Technical calculations are not implemented for family '{family_code}'."
-        )
+        method = getattr(self, self._CALCULATORS[calc_type])
+        return method(configuration_values)
 
     def _calculate_rectangular_fire_damper(
         self,

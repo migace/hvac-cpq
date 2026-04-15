@@ -38,8 +38,14 @@ def test_engine(test_database_url: str) -> Generator[Engine, None, None]:
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_database(test_engine: Engine) -> Generator[None, None, None]:
     Base.metadata.create_all(bind=test_engine)
+    # Create sequence for quote numbering (not defined in ORM models, only in migrations)
+    with test_engine.begin() as connection:
+        connection.execute(text("CREATE SEQUENCE IF NOT EXISTS quote_number_seq START 1"))
     yield
     Base.metadata.drop_all(bind=test_engine)
+    # Drop the sequence as well
+    with test_engine.begin() as connection:
+        connection.execute(text("DROP SEQUENCE IF EXISTS quote_number_seq"))
 
 
 @pytest.fixture(scope="session")
